@@ -1,0 +1,40 @@
+
+INCOMPLETE. NOT YET READY TO RUN!!!
+
+
+Requires coin_list.Rda file. Use update_coin_list_Rda.Rmd to create and update the dataset file to most up to date.
+
+```{r}
+setwd("~/Desktop/Crypto_Analysis-master")
+source("check_packages.R")
+check_packages(c("dplyr","plyr"))
+load("coin_list.Rda")
+
+num_of_dates = 7
+
+dates = list()
+for(i in 1:num_of_dates)
+dates[[i]] = filter(coin.list, date == )    
+    
+    
+dates[[1]] = filter(coin.list, date == "2015-02-01") %>% dplyr::rename(price_2015_02_01 = close) %>% select(-date)
+dates[[2]] = filter(coin.list, date == "2015-07-01") %>% dplyr::rename(price_2015_07_01 = close) %>% select(-date)
+dates[[3]] = filter(coin.list, date == "2016-02-01") %>% dplyr::rename(price_2016_02_01 = close) %>% select(-date)
+dates[[4]] = filter(coin.list, date == "2016-07-01") %>% dplyr::rename(price_2016_07_01 = close) %>% select(-date)
+dates[[5]] = filter(coin.list, date == "2017-02-01") %>% dplyr::rename(price_2017_02_01 = close) %>% select(-date)
+dates[[6]] = filter(coin.list, date == "2017-07-01") %>% dplyr::rename(price_2017_07_01 = close) %>% select(-date)
+dates[[7]] = filter(coin.list, date == "2018-02-01") %>% dplyr::rename(price_2018_02_01 = close) %>% select(-date)
+
+
+price_history_df = join_all(dates, by =c("symbol","name","ranknow"), type = 'right')
+
+
+
+# Seperates coins by coin rank/name
+coin = list()
+
+for(i in 1:20){
+    coin[[i]] = filter(coin.list, ranknow == i)
+}
+```
+

@@ -1,0 +1,41 @@
+
+
+Creates crash information dataset. 
+```{r}
+setwd("~/Desktop/Crypto_Analysis-master")
+source("check_packages.R")
+check_packages(c("ggpubr","ggplot2","ggthemes","scales"))
+
+# Manually input crash data from chart (does not include dec 2017 crash onwards)
+days_declining = c(4,13,35,14,410,88,162,8,53,4,24)    # days_declining = total # days of overall downtrend since start of crash
+percent_decline = c(30,41,39,33,85,76,94,34,49,72,94)
+days_recovering = c(8,40,55,48,1181,211,631,12,66,86,40)
+
+crash_history_df = data.frame(days_declining, percent_decline, days_recovering) %>%
+# Create column that calculates rate of decline as a new variable
+mutate(decline_per_day = percent_decline/days_declining) %>% 
+    arrange(decline_per_day)
+```
+
+
+Creates lowess curve graph. Need to manually input current_decline_per_day variable.
+```{r}
+# current_decline_per_day is the total % decrease since all time high divided by the total number of days between all time high and today
+current_decline_per_day = 56/49
+    
+ggplot(crash_history_df, aes(x=decline_per_day, y=days_declining)) +
+    geom_point(size=3) +
+    geom_smooth(method="loess", span = 1, fill="darkorange1", color = "orange3", alpha = 0.45) +
+        geom_smooth(method="loess", span = 3, fill="palegreen2", color = "green", alpha = 0.45) +
+    geom_vline( xintercept = 56/49, color="red") +
+    scale_y_continuous(breaks=round(exp(seq(0,6.5,by=0.2)),0),trans=log2_trans()) +
+    #scale_y_continuous(breaks=seq(0,6,by=0.25))  +
+    scale_x_continuous(breaks=seq(0,25,by=0.25), limits = c(max(0, current_decline_per_day - 3.5), round(current_decline_per_day + 3.5))) +
+    ggtitle("BTC Crash Duration Prediction using Loess Method") +
+    theme_economist() + scale_colour_economist() +
+    xlab("Average % Decline Per Day from All Time High") +
+    ylab("Total # of Days Crash Lasted") +
+    annotate("text", label = "Current Crash", x = current_decline_per_day - 0.05, y = 4, size = 4, colour = "red") +
+    geom_label(x = round(current_decline_per_day + 2), y = max(crash_history_df$log_days_declining), label = "Orange Model = More Conservative")
+```
+
