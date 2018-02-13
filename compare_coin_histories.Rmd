@@ -7,29 +7,36 @@ Requires coin_list.Rda file. Use update_coin_list_Rda.Rmd to create and update t
 ```{r}
 setwd("~/Desktop/Crypto_Analysis-master")
 source("check_packages.R")
-check_packages(c("dplyr","plyr"))
+check_packages(c("dplyr","plyr", "scales", "sjPlot"))
 load("coin_list.Rda")
 
-num_of_dates = 7
-
 dates = list()
-for(i in 1:num_of_dates)
-dates[[i]] = filter(coin.list, date == )    
-    
-    
-dates[[1]] = filter(coin.list, date == "2015-02-01") %>% dplyr::rename(price_2015_02_01 = close) %>% select(-date)
-dates[[2]] = filter(coin.list, date == "2015-07-01") %>% dplyr::rename(price_2015_07_01 = close) %>% select(-date)
-dates[[3]] = filter(coin.list, date == "2016-02-01") %>% dplyr::rename(price_2016_02_01 = close) %>% select(-date)
-dates[[4]] = filter(coin.list, date == "2016-07-01") %>% dplyr::rename(price_2016_07_01 = close) %>% select(-date)
-dates[[5]] = filter(coin.list, date == "2017-02-01") %>% dplyr::rename(price_2017_02_01 = close) %>% select(-date)
-dates[[6]] = filter(coin.list, date == "2017-07-01") %>% dplyr::rename(price_2017_07_01 = close) %>% select(-date)
-dates[[7]] = filter(coin.list, date == "2018-02-01") %>% dplyr::rename(price_2018_02_01 = close) %>% select(-date)
+
+dates[[1]] = filter(coin.list, date == "2017-02-10") %>% dplyr::rename(price_2017_02_10 = price) %>% select(-date)
+dates[[2]] = filter(coin.list, date == "2017-08-10") %>% dplyr::rename(price_2017_08_10 = price) %>% select(-date)
+dates[[3]] = filter(coin.list, date == "2017-10-10") %>% dplyr::rename(price_2017_10_10 = price) %>% select(-date)
+dates[[4]] = filter(coin.list, date == "2017-12-10") %>% dplyr::rename(price_2017_12_10 = price) %>% select(-date)
+dates[[5]] = filter(coin.list, date == "2018-01-10") %>% dplyr::rename(price_2018_01_10 = price) %>% select(-date)
+dates[[6]] = filter(coin.list, date == "2018-02-01") %>% dplyr::rename(price_2018_02_01 = price) %>% select(-date)
+dates[[7]] = filter(coin.list, date == "2018-02-10") %>% dplyr::rename(price_2018_02_10 = price) %>% select(-date)
+
+price_history_df = join_all(dates, by =c("symbol","name","ranknow"), type = 'full') %>%
+    mutate(one_year = percent( (price_2018_02_10 - price_2017_02_10) / price_2017_02_10)) %>%
+    mutate(six_months = percent((price_2018_02_10 - price_2017_08_10) / price_2017_08_10)) %>%
+        mutate(four_months = percent((price_2018_02_10 - price_2017_10_10) / price_2017_10_10)) %>%
+        mutate(two_months = percent( (price_2018_02_10 - price_2017_12_10) / price_2017_12_10 )) %>%
+                mutate(one_month = percent((price_2018_02_10 - price_2018_01_10) / price_2018_01_10)) %>%
+            mutate(ten_days = percent((price_2018_02_10 - price_2018_02_01) / price_2018_02_01)) %>%
+    select(name, one_year, six_months, four_months, two_months, one_month, ten_days)
+    price_history_df[price_history_df=="NA%"] <- ""
 
 
-price_history_df = join_all(dates, by =c("symbol","name","ranknow"), type = 'right')
+sjPlot::tab_df(price_history_df)
+
+```
 
 
-
+```{r}
 # Seperates coins by coin rank/name
 coin = list()
 
