@@ -5,33 +5,37 @@ INCOMPLETE. NOT YET READY TO RUN!!!
 Requires coin_list.Rda file. Use update_coin_list_Rda.Rmd to create and update the dataset file to most up to date.
 
 ```{r}
-setwd("~/Desktop/Crypto_Analysis-master")
+#setwd("~/Desktop/Crypto_Analysis-master")
 source("check_packages.R")
 check_packages(c("dplyr","plyr", "scales", "sjPlot"))
 load("coin_list.Rda")
 
-dates = list()
-
-dates[[1]] = filter(coin.list, date == "2017-02-10") %>% dplyr::rename(price_2017_02_10 = price) %>% select(-date)
-dates[[2]] = filter(coin.list, date == "2017-08-10") %>% dplyr::rename(price_2017_08_10 = price) %>% select(-date)
-dates[[3]] = filter(coin.list, date == "2017-10-10") %>% dplyr::rename(price_2017_10_10 = price) %>% select(-date)
-dates[[4]] = filter(coin.list, date == "2017-12-10") %>% dplyr::rename(price_2017_12_10 = price) %>% select(-date)
-dates[[5]] = filter(coin.list, date == "2018-01-10") %>% dplyr::rename(price_2018_01_10 = price) %>% select(-date)
-dates[[6]] = filter(coin.list, date == "2018-02-01") %>% dplyr::rename(price_2018_02_01 = price) %>% select(-date)
-dates[[7]] = filter(coin.list, date == "2018-02-10") %>% dplyr::rename(price_2018_02_10 = price) %>% select(-date)
-
-price_history_df = join_all(dates, by =c("symbol","name","ranknow"), type = 'full') %>%
-    mutate(one_year = percent( (price_2018_02_10 - price_2017_02_10) / price_2017_02_10)) %>%
-    mutate(six_months = percent((price_2018_02_10 - price_2017_08_10) / price_2017_08_10)) %>%
-        mutate(four_months = percent((price_2018_02_10 - price_2017_10_10) / price_2017_10_10)) %>%
-        mutate(two_months = percent( (price_2018_02_10 - price_2017_12_10) / price_2017_12_10 )) %>%
-                mutate(one_month = percent((price_2018_02_10 - price_2018_01_10) / price_2018_01_10)) %>%
-            mutate(ten_days = percent((price_2018_02_10 - price_2018_02_01) / price_2018_02_01)) %>%
-    select(name, one_year, six_months, four_months, two_months, one_month, ten_days)
-    price_history_df[price_history_df=="NA%"] <- ""
-
-
-sjPlot::tab_df(price_history_df)
+ generate_comparison<- function(user_date="2018-02-01", last_month=12){
+         date_seq <- seq(as.Date(user_date), length=last_month, by="-1 month") - 1
+      dates = list()
+      for (i in 1:length(date_seq)){
+        char_date <-  paste("price", as.character(date_seq[i]), sep = "_")
+        dates[[i]] = filter(coin.list, date ==  as.character(date_seq[i])) %>%       dplyr::rename(!!char_date:=price) %>% select(-date, -ranknow)
+      }
+      price_history_df = join_all(dates, by =c("name"), type = 'full')
+      
+      
+      for (i in 1:length(date_seq)){
+     
+        char_date <- as.character(date_seq[i])
+        start_date <-  paste("price", as.character(date_seq[1]), sep = "_")
+        end_date <-  paste("price", as.character(date_seq[i]), sep = "_")
+       price_history_df[[char_date]] = (price_history_df[[start_date]] - price_history_df[[end_date]]) / price_history_df[[end_date]]
+      
+      }
+      
+      return(price_history_df)
+ }
+ 
+ 
+ generate_comparison("2018-02-01",24)
+ 
+# sjPlot::tab_df(price_history_df)
 
 ```
 
