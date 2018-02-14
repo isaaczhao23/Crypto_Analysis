@@ -1,51 +1,85 @@
 
-INCOMPLETE. NOT YET READY TO RUN!!!
+Requires coin_list.Rda file. Use update_coin_list_Rda.Rmd to update the history data file to today's date. ~15 min to update.
 
-
-Requires coin_list.Rda file. Use update_coin_list_Rda.Rmd to create and update the dataset file to most up to date.
 
 ```{r}
-#setwd("~/Desktop/Crypto_Analysis-master")
+setwd("~/Desktop/Crypto_Analysis-master")
 source("check_packages.R")
+source("common_functions.R")
 check_packages(c("dplyr","plyr", "scales", "sjPlot"))
 load("coin_list.Rda")
 
- generate_comparison<- function(user_date="2018-02-01", last_month=12){
-         date_seq <- seq(as.Date(user_date), length=last_month, by="-1 month") - 1
+dates = list()
+
+user_date = "2018-02-10"
+last_month = 12
+
+ generate_comparison <- function(user_date="2018-02-10", last_month=12){
+         date_seq <- seq(as.Date(user_date), length=last_month + 1, by="-1 month")
       dates = list()
       for (i in 1:length(date_seq)){
         char_date <-  paste("price", as.character(date_seq[i]), sep = "_")
-        dates[[i]] = filter(coin.list, date ==  as.character(date_seq[i])) %>%       dplyr::rename(!!char_date:=price) %>% select(-date, -ranknow)
+        dates[[i]] = filter(coin.list, date ==  as.character(date_seq[i])) %>%       
+            dplyr::rename(!!char_date:=price) %>% 
+            select(-date, -ranknow, -symbol)
       }
-      price_history_df = join_all(dates, by =c("name"), type = 'full')
       
+price_history_df = join_all(dates, by =c("name"), type = 'full')
       
       for (i in 1:length(date_seq)){
-     
         char_date <- as.character(date_seq[i])
         start_date <-  paste("price", as.character(date_seq[1]), sep = "_")
         end_date <-  paste("price", as.character(date_seq[i]), sep = "_")
        price_history_df[[char_date]] = (price_history_df[[start_date]] - price_history_df[[end_date]]) / price_history_df[[end_date]]
-      
       }
       
-      return(price_history_df)
+price_history_df = price_history_df %>% select(-contains("price")) %>% select(-2)     # Removes prices and today's date
+ 
+# Sorts each column of percent_history_df
+sort_df = list()
+for ( i in 1:ncol(price_history_df)){
+    sort_df[[i]] = price_history_df[order(price_history_df[,i], decreasing=TRUE), c(1,i)] 
+}
+
+sort_df[[1]] = NULL
+
+# Puts together all sorted columns and turns into percent format
+date_seq_name = format(date_seq[2:ncol(price_history_df)], format="%B %d, %Y")
+percent_history_df = matrix(0,nrow(price_history_df), ncol(price_history_df)) %>% as.data.frame() 
+colnames(percent_history_df) = c("Rank",date_seq_name)
+
+percent_history_df[,1] = paste( "#", as.character(c(1:nrow(percent_history_df))), sep="")
+
+for(i in 2: (ncol(price_history_df))){
+    percent_history_df[,i] = paste( percentage(sort_df[[i-1]][,2]), " (", sort_df[[i-1]][,1], ")", sep="")
+    percent_history_df[,i][grep("NA%", percent_history_df[,i])] <- ""
+}
+      output = list(percent = percent_history_df, a="a")    # Will replace "a" with another sorted dataset by name
+      return(output)
  }
  
  
- generate_comparison("2018-02-01",24)
  
-# sjPlot::tab_df(price_history_df)
+ 
+######################################################### 
+#####  Run function to generate comparison tables  ######
+#########################################################
+ 
+percent_history_df = generate_comparison("2018-02-10",12)$percent
 
+
+View(percent_history_df)
+sjPlot::tab_df(percent_history_df, title = "Cryptocurrencies With the Highest Gains for Each Month Compared to Februrary 10, 2018", alternate.rows=TRUE ) 
 ```
-
-
+ 
+ 
+Run function to generate comparison tables
 ```{r}
-# Seperates coins by coin rank/name
-coin = list()
+percent_history_df = generate_comparison("2018-02-10",12)$percent
 
-for(i in 1:20){
-    coin[[i]] = filter(coin.list, ranknow == i)
-}
+
+View(percent_history_df)
+sjPlot::tab_df(percent_history_df, title = "Cryptocurrencies With the Highest Gains for Each Month Compared to Februrary 10, 2018", alternate.rows=TRUE )      
 ```
+
 
