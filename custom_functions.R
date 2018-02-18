@@ -3,7 +3,6 @@ check_packages(c("dplyr","plyr", "scales", "sjPlot"))
 load("coin_list.Rda")
 
 
-
 ###############################################################################################
 ###############################################################################################
 
@@ -23,8 +22,14 @@ percentage = function(x){
 ###############################################################################################
 
 
-generate_comparison <- function(user_date="2018-02-10", last_month=12, type = "marketcap"){
-    date_seq <- seq(as.Date(user_date), length=last_month + 1, by="-1 month")
+generate_comparison <- function(comparison_date, end_date, month_or_day = "day", interval = 1, type = "marketcap"){
+    
+    if (comparison_date < end_date){
+    date_seq = seq(from = as.Date(comparison_date), to = as.Date(end_date), by=paste("+", as.character(interval), " ", month_or_day, sep=""))
+    } else {
+    date_seq = seq(from = as.Date(comparison_date), to = as.Date(end_date), by=paste("-", as.character(interval), " ", month_or_day, sep=""))
+    }
+    
     dates = list()
     for (i in 1:length(date_seq)){
         char_date <-  paste("price", as.character(date_seq[i]), sep = "_")
@@ -37,24 +42,38 @@ generate_comparison <- function(user_date="2018-02-10", last_month=12, type = "m
     
     for (i in 1:length(date_seq)){
         char_date <- as.character(date_seq[i])
-        start_date <-  paste("price", as.character(date_seq[1]), sep = "_")
-        end_date <-  paste("price", as.character(date_seq[i]), sep = "_")
-        price_history_df[[char_date]] = (price_history_df[[start_date]] - price_history_df[[end_date]]) / price_history_df[[end_date]]
+        starting_date <-  paste("price", as.character(date_seq[1]), sep = "_")
+        ending_date <-  paste("price", as.character(date_seq[i]), sep = "_")
+        if (comparison_date < end_date){ 
+            price_history_df[[char_date]] = (price_history_df[[ending_date]] - price_history_df[[starting_date]]) / price_history_df[[starting_date]]
+        } else{
+            price_history_df[[char_date]] = (price_history_df[[starting_date]] - price_history_df[[ending_date]]) / price_history_df[[ending_date]]
+        }
     }
     
     price_history_df = price_history_df %>% select(-contains("price")) %>% select(-2)     # Removes prices and today's date
-
+    
+    
+    date_seq_name = format(date_seq[2:ncol(price_history_df)], format="%B %d, %Y")
+    #### Creates dataframe for sorting by marketcap with no percent
+    nopercent_history_df = price_history_df
+    for(i in 2: (ncol(price_history_df))){
+        nopercent_history_df[,i] = price_history_df[,i]
+        nopercent_history_df[,i][grep("NA%", nopercent_history_df[,i])] <- ""
+    }
+    colnames(nopercent_history_df) = c("Name",date_seq_name)
     
     #### Creates dataframe for sorting by marketcap #####
     mktcap_history_df = price_history_df
     for(i in 2: (ncol(price_history_df))){
-        mktcap_history_df[,i] = paste( percentage(price_history_df[,i]), " (", price_history_df[,1], ")", sep="")
+        mktcap_history_df[,i] = percentage(price_history_df[,i])
         mktcap_history_df[,i][grep("NA%", mktcap_history_df[,i])] <- ""
     }
+    colnames(mktcap_history_df) = c("Name",date_seq_name)
     
-
     #### Creates dataframe for sorting by coin name ######
-    name_history_df = arrange(mktcap_history_df, name)
+    name_history_df = arrange(mktcap_history_df, Name)
+    colnames(name_history_df) = c("Name",date_seq_name)
     
     
     #### Creates dataframe sorting each column by highest percent gain #####
@@ -65,7 +84,6 @@ generate_comparison <- function(user_date="2018-02-10", last_month=12, type = "m
     
     sort_df[[1]] = NULL
     
-    date_seq_name = format(date_seq[2:ncol(price_history_df)], format="%B %d, %Y")
     percent_history_df = matrix(0,nrow(price_history_df), ncol(price_history_df)) %>% as.data.frame() 
     colnames(percent_history_df) = c("Rank",date_seq_name)
     
@@ -81,6 +99,8 @@ generate_comparison <- function(user_date="2018-02-10", last_month=12, type = "m
         output = percent_history_df
     } else if (type =="name"){
         output = name_history_df
+    } else if (type =="nopercent") {
+        output = nopercent_history_df
     } else {
         output = mktcap_history_df
     }
