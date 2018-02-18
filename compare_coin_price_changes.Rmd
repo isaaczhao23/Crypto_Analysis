@@ -1,17 +1,31 @@
 
-Use update_coin_list_Rda.Rmd if you want to update the history data file to today's date. ~15 min to update.
+Use update_coin_list_Rda.Rmd if you want to update the history data file to today's date. ~15 min to update. Currently can only go up to Feb 10, 2018.
+This only takes into consideration of top 50 coins in marketcap value.
 
 
+#### How to use generate_comparison function####
+comparison_date:
+    The specific reference date that you want for all other dates to compare to. "YYYY-MM-DD" format.
+    
+end_date:
+    The furthest date in the time interval you want to compare with. "YYYY-MM-DD" format.
 
-The first field in generate_comparison is the reference price on the specified date you want all other dates to compare to. 
-    This can only take a maximum of the date from the last date update_coin_list_Rda.Rmd was run. Currently max is Feb 10, 2018.
+month_or_day:
+    "day" = [DEFAULT] Looks at all the days between the start date and end date.
+    "month" = Looks at all the months between the start date and end date
 
-The second field is the number of months in the past you want to compare to.
+interval:
+    Takes a number as the argument. The interval number of months or days the start to end date is divided by. Default value is 1.
 
-The third field can take values:
-    "name" = sorts dataset by coin name.
-    "marketcap" = sorts dataset by marketcap (descending).
+time:
+    "-" = [DEFAULT] compares previous prices to the end date price.
+    "+" = compare prices since the start date price.
+
+type:
+    "marketcap" = [DEFAULT] sorts dataset by marketcap (descending).
     "percent" = sorts each column of dataset by the coin with the highest gain since that month.
+    "name" = sorts dataset by coin name.
+    "nopercent" = sorts dataset by marketcap (descending) without percent or name labels.
 ```{r}
 setwd("~/Desktop/Crypto_Analysis-master")
 source("check_packages.R")
@@ -19,8 +33,8 @@ check_packages(c("sjPlot"))
 source("custom_functions.R")
 
 
-output = generate_comparison("2018-02-10",12, "name")
+output = generate_comparison(comparison_date = "2017-10-10", end_date = "2018-02-10", month_or_day = "day", interval = 10, type = "percent")
 View(output)
-sjPlot::tab_df(output, title = "Cryptocurrencies With the Highest Gains for Each Month Compared to Februrary 10, 2018", alternate.rows=TRUE ) 
+sjPlot::tab_df(output, title = "Cryptocurrencies With the Highest Percent Price Increase for Each Month Compared to October 10, 2017", alternate.rows=TRUE ) 
 ```
 
