@@ -72,7 +72,7 @@ generate_comparison <- function(comparison_date, end_date, month_or_day = "day",
     #### Creates dataframe for sorting by marketcap with no percent
     nopercent_history_df = price_history_df
     for(i in 2: (ncol(price_history_df))){
-        nopercent_history_df[,i] = round(price_history_df[,i],4)
+        nopercent_history_df[,i] = price_history_df[,i]
     }
  
     
