@@ -2,10 +2,10 @@ This only takes into consideration of top 50 coins in marketcap value.
 
 #### How to use generate_comparison function####
 comparison_date:
-    The specific reference date that you want for all other dates to compare to. "YYYY-MM-DD" format.
+    The specific reference date that you want for all other dates to compare to. "YYYY-MM-DD" format. Can use Sys.Date() to get today's date.
     
 end_date:
-    The furthest date in the time interval you want to compare with. "YYYY-MM-DD" format.
+    The furthest date in the time interval you want to compare with. "YYYY-MM-DD" format. Can use Sys.Date() to get today's date.
 
 month_or_day:
     "day" = [DEFAULT] Looks at all the days between the start date and end date.
@@ -13,10 +13,6 @@ month_or_day:
 
 interval:
     Takes a number as the argument. The interval number of months or days the start to end date is divided by. Default value is 1.
-
-time:
-    "-" = [DEFAULT] compares previous prices to the end date price.
-    "+" = compare prices since the start date price.
 
 type:
     "marketcap" = [DEFAULT] sorts dataset by marketcap (descending).
@@ -28,9 +24,27 @@ type:
 setwd("~/Desktop/Crypto_Analysis-master")
 source("custom_functions.R")
 
-output = generate_comparison(comparison_date = "2017-10-10", end_date = "2018-02-10", month_or_day = "month", interval = 1, type = "marketcap")
+
+comparison_date = "2018-02-06"
+end_date = "2018-02-18"
+month_or_day = "day"
+interval = 1
+type = "nopercent"
+
+# Creates datafile of top 50 coin price histories
+coin.list = generate_coin.list(comparison_date, end_date)
+
+
+# Creates comparison table of top 50 coins
+output = generate_comparison(comparison_date, end_date, month_or_day, interval, type)
+
 View(output)
-sjPlot::tab_df(output, title = "Cryptocurrencies With the Highest Percent Price Increase for Each Month Compared to October 10, 2017", alternate.rows=TRUE ) 
+title1 = paste("Percent Change of Top 50 Cryptocurrency Prices Compared to the Prices of", format(comparison_date, format="%B %d, %Y"))
+sjPlot::tab_df(output, title1, alternate.rows=TRUE ) 
+
+# Creatse comparison graph of top coins
+
+
 ```
 
 

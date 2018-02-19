@@ -1,5 +1,5 @@
 source("check_packages.R")
-check_packages(c("plyr","dplyr", "scales", "crypto", "sjPlot"))
+check_packages(c("plyr","tidyverse", "scales", "crypto", "sjPlot", "ggthemes"))
 
 
 ###############################################################################################
@@ -15,12 +15,7 @@ percentage = function(x){
 ###############################################################################################
 ###############################################################################################
 
-
-
-###############################################################################################
-###############################################################################################
-
-generate_comparison <- function(comparison_date, end_date, month_or_day = "day", interval = 1, type = "marketcap"){
+generate_coin.list <- function(comparison_date, end_date, topranks = 50){
     
     # Turns dates into 'yyyymmdd' format to use with getCoins()
     convert_date_df = data.frame(a = comparison_date, b = end_date) %>%
@@ -31,17 +26,23 @@ generate_comparison <- function(comparison_date, end_date, month_or_day = "day",
     comparison_date1 = convert_date_df$date1
     end_date1 = convert_date_df$date2
     
+    if (comparison_date < end_date){
+            coin.list = getCoins(limit= topranks, start_date = comparison_date1, end_date = end_date1)  %>%  select(name,date,close) %>% dplyr::rename(price = close)
+    } else {
+            coin.list = getCoins(limit= topranks, start_date = end_date1, end_date = comparison_date1) %>%   select(name,date,close) %>% dplyr::rename(price = close)
+    }
+}
+
+
+###############################################################################################
+###############################################################################################
+
+generate_comparison <- function(comparison_date, end_date, month_or_day = "day", interval = 1, type = "marketcap"){
     
     if (comparison_date < end_date){
     date_seq = seq(from = as.Date(comparison_date), to = as.Date(end_date), by=paste("+", as.character(interval), " ", month_or_day, sep=""))
-        if (!exists("coin.list")){
-    coin.list = getCoins(limit=50, start_date = comparison_date1, end_date = end_date1)  %>%  select(name,date,close) %>% dplyr::rename(price = close)
-        }
     } else {
     date_seq = seq(from = as.Date(comparison_date), to = as.Date(end_date), by=paste("-", as.character(interval), " ", month_or_day, sep=""))
-         if (!exists("coin.list")){
-             coin.list = getCoins(limit=50, start_date = end_date1, end_date = comparison_date1) %>%   select(name,date,close) %>% dplyr::rename(price = close)
-         }
     }
     
     dates = list()
@@ -68,15 +69,14 @@ generate_comparison <- function(comparison_date, end_date, month_or_day = "day",
     price_history_df = price_history_df %>% select(-contains("price")) %>% select(-2)     # Removes prices and today's date
     
     
-    date_seq_name = format(date_seq[2:ncol(price_history_df)], format="%B %d, %Y")
     #### Creates dataframe for sorting by marketcap with no percent
     nopercent_history_df = price_history_df
     for(i in 2: (ncol(price_history_df))){
-        nopercent_history_df[,i] = price_history_df[,i]
-        nopercent_history_df[,i][grep("NA%", nopercent_history_df[,i])] <- ""
+        nopercent_history_df[,i] = round(price_history_df[,i],4)
     }
-    colnames(nopercent_history_df) = c("Name",date_seq_name)
+ 
     
+    date_seq_name = format(date_seq[2:ncol(price_history_df)], format="%B %d, %Y")
     #### Creates dataframe for sorting by marketcap #####
     mktcap_history_df = price_history_df
     for(i in 2: (ncol(price_history_df))){
