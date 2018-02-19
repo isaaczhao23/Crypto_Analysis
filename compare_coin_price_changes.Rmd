@@ -1,7 +1,4 @@
-
-Use update_coin_list_Rda.Rmd if you want to update the history data file to today's date. ~15 min to update. Currently can only go up to Feb 10, 2018.
 This only takes into consideration of top 50 coins in marketcap value.
-
 
 #### How to use generate_comparison function####
 comparison_date:
@@ -26,15 +23,14 @@ type:
     "percent" = sorts each column of dataset by the coin with the highest gain since that month.
     "name" = sorts dataset by coin name.
     "nopercent" = sorts dataset by marketcap (descending) without percent or name labels.
+    
 ```{r}
 setwd("~/Desktop/Crypto_Analysis-master")
-source("check_packages.R")
-check_packages(c("sjPlot"))
 source("custom_functions.R")
 
-
-output = generate_comparison(comparison_date = "2017-10-10", end_date = "2018-02-10", month_or_day = "day", interval = 10, type = "percent")
+output = generate_comparison(comparison_date = "2017-10-10", end_date = "2018-02-10", month_or_day = "month", interval = 1, type = "marketcap")
 View(output)
 sjPlot::tab_df(output, title = "Cryptocurrencies With the Highest Percent Price Increase for Each Month Compared to October 10, 2017", alternate.rows=TRUE ) 
 ```
+
 

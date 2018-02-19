@@ -1,6 +1,5 @@
 source("check_packages.R")
-check_packages(c("dplyr","plyr", "scales", "sjPlot"))
-load("coin_list.Rda")
+check_packages(c("plyr","dplyr", "scales", "crypto", "sjPlot"))
 
 
 ###############################################################################################
@@ -21,13 +20,28 @@ percentage = function(x){
 ###############################################################################################
 ###############################################################################################
 
-
 generate_comparison <- function(comparison_date, end_date, month_or_day = "day", interval = 1, type = "marketcap"){
+    
+    # Turns dates into 'yyyymmdd' format to use with getCoins()
+    convert_date_df = data.frame(a = comparison_date, b = end_date) %>%
+        separate(a,c("year1","month1","day1"),"-") %>%
+        separate(b,c("year2","month2","day2"),"-") %>%
+        mutate(date1=paste0(year1,month1,day1)) %>%
+        mutate(date2=paste0(year2,month2,day2))
+    comparison_date1 = convert_date_df$date1
+    end_date1 = convert_date_df$date2
+    
     
     if (comparison_date < end_date){
     date_seq = seq(from = as.Date(comparison_date), to = as.Date(end_date), by=paste("+", as.character(interval), " ", month_or_day, sep=""))
+        if (!exists("coin.list")){
+    coin.list = getCoins(limit=50, start_date = comparison_date1, end_date = end_date1)  %>%  select(name,date,close) %>% dplyr::rename(price = close)
+        }
     } else {
     date_seq = seq(from = as.Date(comparison_date), to = as.Date(end_date), by=paste("-", as.character(interval), " ", month_or_day, sep=""))
+         if (!exists("coin.list")){
+             coin.list = getCoins(limit=50, start_date = end_date1, end_date = comparison_date1) %>%   select(name,date,close) %>% dplyr::rename(price = close)
+         }
     }
     
     dates = list()
@@ -35,7 +49,7 @@ generate_comparison <- function(comparison_date, end_date, month_or_day = "day",
         char_date <-  paste("price", as.character(date_seq[i]), sep = "_")
         dates[[i]] = filter(coin.list, date ==  as.character(date_seq[i])) %>%       
             dplyr::rename(!!char_date:=price) %>% 
-            select(-date, -ranknow, -symbol)
+            select(-date)
     }
     
     price_history_df = join_all(dates, by =c("name"), type = 'full')
