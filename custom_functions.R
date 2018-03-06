@@ -1,5 +1,5 @@
 source("check_packages.R")
-check_packages(c("plyr","tidyverse", "scales", "crypto", "sjPlot", "ggthemes"))
+check_packages(c("plyr","tidyverse", "scales", "crypto", "sjPlot", "ggthemes", "directlabels"))
 
 
 ###############################################################################################
@@ -15,7 +15,7 @@ percentage = function(x){
 ###############################################################################################
 ###############################################################################################
 
-generate_coin.list <- function(comparison_date, end_date, topranks = 50){
+generate_coin.list <- function(comparison_date, end_date, topranks = 30){
     
     # Turns dates into 'yyyymmdd' format to use with getCoins()
     convert_date_df = data.frame(a = comparison_date, b = end_date) %>%
@@ -27,9 +27,9 @@ generate_coin.list <- function(comparison_date, end_date, topranks = 50){
     end_date1 = convert_date_df$date2
     
     if (comparison_date < end_date){
-            coin.list = getCoins(limit= topranks, start_date = comparison_date1, end_date = end_date1)  %>%  select(name,date,close) %>% dplyr::rename(price = close)
+            coin.list = getCoins(limit= topranks, start_date = comparison_date1, end_date = end_date1)  %>%  dplyr::select(name,date,close) %>% dplyr::rename(price = close)
     } else {
-            coin.list = getCoins(limit= topranks, start_date = end_date1, end_date = comparison_date1) %>%   select(name,date,close) %>% dplyr::rename(price = close)
+            coin.list = getCoins(limit= topranks, start_date = end_date1, end_date = comparison_date1) %>%   dplyr::select(name,date,close) %>% dplyr::rename(price = close)
     }
 }
 
@@ -125,5 +125,34 @@ generate_comparison <- function(comparison_date, end_date, month_or_day = "day",
 ###############################################################################################
 ###############################################################################################
 
+
+generate_multigraphs = function(comparison_date = "2018-02-06", end_date = Sys.Date()) {
+    
+    if (comparison_date <= end_date){
+        comparison_date1 = comparison_date
+        end_date1 = end_date
+    } else {
+        comparison_date1 = end_date
+        end_date1 = comparison_date
+    }
+    output = generate_comparison(comparison_date1, end_date1, month_or_day = "day", interval=1, type="nopercent")
+    
+    c = as.character(as.Date(end_date)+1)
+    
+    output1 = cbind(rank = c(1:nrow(output)), output) %>% 
+        cbind(a= rep(0,nrow(output))) %>% dplyr::rename(!!comparison_date:=a) %>% 
+        cbind(b= rep(NA,nrow(output))) %>% dplyr::rename(!!as.character(as.Date(end_date)+1):=b) %>% 
+        gather(date, change, -name, -rank) %>% mutate(date = as.Date(date)) %>% arrange(date,rank)
+    
+    plotdf1 = output1 %>% filter(name %in% c("Bitcoin", "Bitcoin Cash", "Ethereum", "Litecoin", "Ripple", "Cardano", "Stellar", "NEO", "Monero", "VeChain", "Binance Coin", "Verge", "Nano", "TRON"))
+    
+    ggplot(plotdf1,aes(x=date,y=change, color=name)) +
+        theme_economist()+
+        scale_y_continuous("Percent Change", labels=percent) + 
+        geom_line() +
+        ggtitle(paste("Percent Change of Cryptocurrency Prices Compared to the Prices of", format(comparison_date, format="%B %d, %Y"))) +
+        theme(legend.position="none") +
+        geom_dl(aes(label = name), method = "last.points", cex = 1)
+}
 
 

@@ -25,25 +25,26 @@ setwd("~/Desktop/Crypto_Analysis-master")
 source("custom_functions.R")
 
 
-comparison_date = "2018-02-06"
-end_date = "2018-02-18"
+Sys.Date()
+
+comparison_date = "2017-12-01"
+end_date = "2018-02-05"
 month_or_day = "day"
 interval = 1
-type = "nopercent"
+type = "percent"
 
-# Creates datafile of top 50 coin price histories
-coin.list = generate_coin.list(comparison_date, end_date)
+# Creates datafile of top coin price histories
+coin.list = generate_coin.list(comparison_date, end_date, topranks=30) 
 
-
-# Creates comparison table of top 50 coins
+# Creates comparison table of top coins
 output = generate_comparison(comparison_date, end_date, month_or_day, interval, type)
 
 View(output)
-title1 = paste("Percent Change of Top 50 Cryptocurrency Prices Compared to the Prices of", format(comparison_date, format="%B %d, %Y"))
+title1 = paste("Percent Change of Top 15 Cryptocurrency Prices Compared to the Prices of", format(comparison_date, format="%B %d, %Y"))
 sjPlot::tab_df(output, title1, alternate.rows=TRUE ) 
 
 # Creatse comparison graph of top coins
-
+generate_multigraphs(comparison_date, end_date)
 
 ```
 
