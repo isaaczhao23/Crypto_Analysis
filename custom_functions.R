@@ -1,6 +1,5 @@
 source("check_packages.R")
-check_packages(c("plyr","tidyverse", "scales", "crypto", "sjPlot", "ggthemes", "directlabels"))
-
+check_packages(c("plyr","tidyverse", "scales", "crypto", "ggthemes", "directlabels", "shiny","ggpubr", "ggrepel","readxl","gridExtra","MASS","sjPlot"))
 
 ###############################################################################################
 ###############################################################################################
@@ -37,7 +36,11 @@ generate_coin.list <- function(comparison_date, end_date, topranks = 30){
 ###############################################################################################
 ###############################################################################################
 
-generate_comparison <- function(comparison_date, end_date, month_or_day = "day", interval = 1, type = "marketcap"){
+comparison_chart <- function(comparison_date, end_date = Sys.Date(), month_or_day = "day", interval = 1, type = "marketcap", topranks=50, view_chart=TRUE){
+    
+    # Creates data
+    coin.list = generate_coin.list(comparison_date, end_date, topranks=50) 
+    
     
     if (comparison_date < end_date){
     date_seq = seq(from = as.Date(comparison_date), to = as.Date(end_date), by=paste("+", as.character(interval), " ", month_or_day, sep=""))
@@ -50,7 +53,7 @@ generate_comparison <- function(comparison_date, end_date, month_or_day = "day",
         char_date <-  paste("price", as.character(date_seq[i]), sep = "_")
         dates[[i]] = filter(coin.list, date ==  as.character(date_seq[i])) %>%       
             dplyr::rename(!!char_date:=price) %>% 
-            select(-date)
+            dplyr::select(-date)
     }
     
     price_history_df = join_all(dates, by =c("name"), type = 'full')
@@ -66,7 +69,7 @@ generate_comparison <- function(comparison_date, end_date, month_or_day = "day",
         }
     }
     
-    price_history_df = price_history_df %>% select(-contains("price")) %>% select(-2)     # Removes prices and today's date
+    price_history_df = price_history_df %>% dplyr::select(-contains("price")) %>% dplyr::select(-2)     # Removes prices and today's date
     
     
     #### Creates dataframe for sorting by marketcap with no percent
@@ -119,14 +122,22 @@ generate_comparison <- function(comparison_date, end_date, month_or_day = "day",
         output = mktcap_history_df
     }
     
-    return(output)
+    
+    if (view_chart == TRUE){
+    View(output)
+title = paste("Percent Change of Top",topranks, "Cryptocurrency Prices Compared to the Prices of", format(comparison_date, format="%B %d, %Y"))
+sjPlot::tab_df(output, title, alternate.rows=TRUE) 
+    }else {
+	    return(output)
+    }
+
 }
 
 ###############################################################################################
 ###############################################################################################
 
 
-generate_multigraphs = function(comparison_date = "2018-02-06", end_date = Sys.Date()) {
+comparison_graph = function(comparison_date = "2018-02-06", end_date = Sys.Date(), filter_name=NULL, filter_rank = NULL) {
     
     if (comparison_date <= end_date){
         comparison_date1 = comparison_date
@@ -135,7 +146,7 @@ generate_multigraphs = function(comparison_date = "2018-02-06", end_date = Sys.D
         comparison_date1 = end_date
         end_date1 = comparison_date
     }
-    output = generate_comparison(comparison_date1, end_date1, month_or_day = "day", interval=1, type="nopercent")
+    output = comparison_chart(comparison_date1, end_date1, month_or_day = "day", interval=1, type="nopercent", view_chart=FALSE)
     
     c = as.character(as.Date(end_date)+1)
     
@@ -144,14 +155,22 @@ generate_multigraphs = function(comparison_date = "2018-02-06", end_date = Sys.D
         cbind(b= rep(NA,nrow(output))) %>% dplyr::rename(!!as.character(as.Date(end_date)+1):=b) %>% 
         gather(date, change, -name, -rank) %>% mutate(date = as.Date(date)) %>% arrange(date,rank)
     
-    plotdf1 = output1 %>% filter(name %in% c("Bitcoin", "Bitcoin Cash", "Ethereum", "Litecoin", "Ripple", "Cardano", "Stellar", "NEO", "Monero", "VeChain", "Binance Coin", "Verge", "Nano", "TRON"))
+    if (!is.null(filter_name) && is.null(filter_rank)) {
+    plotdf1 = output1 %>% filter(name %in% filter_name)
+    } else if (!is.null(filter_rank) && is.null(filter_name)){
+        plotdf1 = output1 %>% filter(rank %in% filter_rank)
+    } else {
+        plotdf1 = output1 %>% filter(rank %in% c(1:5))
+    }
+        
+    
     
     ggplot(plotdf1,aes(x=date,y=change, color=name)) +
         theme_economist()+
         scale_y_continuous("Percent Change", labels=percent) + 
         geom_line() +
         ggtitle(paste("Percent Change of Cryptocurrency Prices Compared to the Prices of", format(comparison_date, format="%B %d, %Y"))) +
-        theme(legend.position="none") +
+        #theme(legend.position="none") +
         geom_dl(aes(label = name), method = "last.points", cex = 1)
 }
 
