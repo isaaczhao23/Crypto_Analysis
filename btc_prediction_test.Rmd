@@ -5,13 +5,35 @@ setwd("~/Desktop/Crypto_Analysis-master")
 source("custom_functions.R")
 source("cor_matrix.R")
 load("bitcoin_history.RDA")  # named df
-btc_2018 = 
+#btc_2018 = 
+```
+
+Finding a model for predicting duration of correction
+```{r}
+# Selecting variables to use
+colnames(df)
+df2 = df[,-c(1:11,17:20)]
+df2 = na.omit(df2)
+colnames(df2)
+pairs(df2[c(1:length(df2))], lower.panel=panel.smooth, upper.panel=panel.cor)
+
+fit = lm(log.days.ath.atl ~ . , df2)
+step_fit <- stepAIC(fit, direction="both")
+step_fit$anova
+
+final.fit = lm(log.days.ath.atl ~ reg.ath.atl + log.days.oatl.ath + log.reg.ath.atl, df2)
+summary(fit)
+summary(final.fit)
+
 ```
 
 Testing model for predicting duration of correction
 ```{r}
 # Model Equation
-fit1 = lm(log.days.ath.atl ~ days.ath.atl + pct.oatl.ath + reg.ath.atl + log.pct.oatl.ath + log.days.oatl.ath + log.reg.ath.atl,df)
+
+
+
+fit1 = lm(log.days.ath.atl ~ reg.ath.atl + log.days.oatl.ath + log.reg.ath.atl,df)
 summary(fit1)
 
 # Observed vs. Predicted Plot
