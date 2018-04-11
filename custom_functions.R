@@ -1,5 +1,5 @@
 source("check_packages.R")
-check_packages(c("plyr","tidyverse", "scales", "crypto", "ggthemes", "directlabels", "shiny","ggpubr", "ggrepel","readxl","gridExtra","MASS","sjPlot"))
+check_packages(c("plyr","tidyverse", "scales", "crypto", "ggthemes", "directlabels", "shiny","ggpubr", "ggrepel","readxl","gridExtra","MASS","sjPlot","lubridate"))
 
 ###############################################################################################
 ###############################################################################################
@@ -174,4 +174,46 @@ comparison_graph = function(comparison_date = "2018-02-06", end_date = Sys.Date(
         geom_dl(aes(label = name), method = "last.points", cex = 1)
 }
 
+###############################################################################################
+###############################################################################################
 
+pred.days.ath.atl = function(oath.date, oatl.date, ath.date, atl.date = Sys.Date()-1){
+
+oath.date = as.Date(oath.date)
+oatl.date = as.Date(oatl.date)
+ath.date = as.Date(ath.date)
+today.date = atl.date
+
+load("fit1.Rda")
+btc_2018 = getCoins(coin="Bitcoin",start_date='20171201') %>% dplyr::rename(price = close) %>% dplyr::select(date,price)
+
+pred.df = data.frame(oath.date,oatl.date,ath.date,today.date)
+
+a1 = btc_2018 %>% dplyr::rename(oath.date = date) %>% dplyr::rename(oath = price)
+a2 = btc_2018 %>% dplyr::rename(oatl.date = date) %>% dplyr::rename(oatl = price)
+a3 = btc_2018 %>% dplyr::rename(ath.date = date) %>% dplyr::rename(ath = price)
+a4 = btc_2018 %>% dplyr::rename(today.date = date) %>% dplyr::rename(atl = price)
+
+pred.df = left_join(pred.df,a1,by="oath.date") %>% left_join(a2,by="oatl.date") %>% left_join(a3,by="ath.date") %>% left_join(a4,by="today.date") %>% mutate(days.oath.oatl = as.numeric(oatl.date - oath.date)) %>% mutate(pct.oath.oatl = (oath-oatl)/oath * 100) %>% mutate(pct.day.oath.oatl = pct.oath.oatl/days.oath.oatl)
+
+pred.df$reg.ath.atl = NA
+numbers = 1
+i=1
+prices = btc_2018 %>% filter(date <= pred.df[[i,"today.date"]], date >= pred.df[[i,"ath.date"]]) %>% dplyr::select(price) 
+if (nrow(prices) == 0 ){
+	df$reg.ath.atl[i] = NA
+} else {
+numbers = seq(from=1,to=nrow(prices),by=1)
+reg.df = cbind(prices,numbers)
+pred.df$reg.ath.atl = -(lm(price~numbers,reg.df)$coefficients[[2]] / pred.df[[i,"ath"]])*100
+}
+
+
+fit1_conf_ci = exp(predict(fit1, pred.df, se.fit=T, type='response',interval = "conf")$fit)
+fit1_pred_ci = exp(predict(fit1, pred.df, se.fit=T, type='response',interval = "pred")$fit)
+fit1_conf_ci_low = as.Date(ath.date) + fit1_conf_ci[2] 
+fit1_conf_ci_mean = as.Date(ath.date) + fit1_conf_ci[1]
+fit1_conf_ci_high = as.Date(ath.date) + fit1_conf_ci[3]
+
+output = print(paste("Correction is expected to end around", format(fit1_conf_ci_low,"%B %d, %Y"), "to", format(fit1_conf_ci_high,"%B %d, %Y")))
+}

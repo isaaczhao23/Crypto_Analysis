@@ -66,7 +66,7 @@ filter_rank:
 Creates comparison graph of price changes
 ```{r}
 # Creates comparison graph of specific coins
-comparison_graph(comparison_date="2018-02-06", filter_name = c("Ripple", "Stellar", "Cardano", "Ethereum", "Bitcoin"))
+comparison_graph(comparison_date="2018-02-06", filter_name = c("Ripple", "Stellar","Bitcoin","Verge", "VeChain", "TRON", "Binance Coin"))
 ```
 
 ```{r}
@@ -74,6 +74,18 @@ comparison_graph(comparison_date="2018-02-06", filter_name = c("Ripple", "Stella
 comparison_graph(comparison_date="2018-02-06", filter_rank = c(1:5))
 ```
 
+#################################################################################
+
+### Predict when correction will end ####
+
+oath.date = date that last correction started
+oatl.date = date that last correction ended
+ath.date = date that current correction started
+atl.date = date that current correction ended 
+	[DEFAULT] = yesterday's date
+```{r}
+pred.days.ath.atl(oath.date = "2018-01-06", oatl.date = "2018-02-05", ath.date = "2018-03-04")
+```
 
 
 
