@@ -1,0 +1,77 @@
+
+Loads essentials. Run create_btc_prediction_data.Rmd to update bitcoin_history.RDA data.
+```{r}
+setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
+source("custom_functions.R")
+source("cor_matrix.R")
+load("bitcoin_history.RDA")  # named df
+#btc_2018 = getCoins(coin="Bitcoin",start_date='20171201') %>% dplyr::rename(price = close) %>% dplyr::select(date,price)
+```
+
+Finding a model for predicting duration of correction
+```{r}
+# Selecting variables to use
+colnames(df)
+df2 = df[,c(12,13,14,15,16,17,18,19,20,21,25,26,27,28,29,30,31)]
+df2 = na.omit(df2)
+colnames(df2)
+pairs(df2[c(1:length(df2))], lower.panel=panel.smooth, upper.panel=panel.cor)
+
+fit = lm(log.days.ath.atl ~ . , df2)
+step_fit <- stepAIC(fit, direction="both")
+step_fit$anova
+fit1 = lm(log.days.ath.atl ~ pct.day.oath.oatl + reg.ath.atl + I(reg.ath.atl^2),df2)
+#save(fit1,file="fit1.Rda")
+
+# Comparing fits
+summary(fit1)
+
+# Observed vs. Predicted Plot
+fit1.predict = predict(fit1,df2,type="response")
+df.predict.fit1 = cbind(df2,fit1.predict)
+ggscatter(df.predict.fit1, x = "fit1.predict", y= "log.days.ath.atl", add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson") %>% ggpar(xlab = "Predicted", ylab= "Observed", title = "Observed vs. Predicted Duration of BTC Corrections (Log Transformed)")
+
+# Residual Diagnostics
+plot(fit1)
+
+df.predict.fit1 = cbind(df.predict.fit1,resid(fit1))
+
+ggplot(df.predict.fit1,aes(x=fit1.predict, y=resid(fit1))) +
+geom_point(size=4) + 
+geom_smooth(method="lm", fill="darkorange", color = "orange", alpha = 0.3, size=2) 
+
+```
+
+Finding a model for predicting when the next correction will happen
+```{r}
+colnames(df)
+df3 = df[,c(1)]
+df3 = na.omit(df3)
+
+fit = lm(log.days.atl.nath ~ . + I(.^2), df2)
+step_fit <- stepAIC(fit, direction="both")
+step_fit$anova
+
+fit1 = lm()
+
+```
+
+
+
+Finding a model for predicting duration of correction for predicting % decrease of correction (difference in price from start to end of correction)
+```{r}
+
+```
+
+Finding a model for predicting when prices will return/recover to previous all time high
+```{r}
+
+```
+
+Finding a model for predicting % increase in prices from all time low to new all time high (start of next correction)
+```{r}
+
+```
+
+
+

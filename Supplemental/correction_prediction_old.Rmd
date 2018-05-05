@@ -1,0 +1,113 @@
+
+
+Creates crash information dataset. 
+```{r}
+setwd("~/Desktop/Crypto_Analysis-master")
+source("custom_functions.R")
+source("cor_matrix.R")
+load("bitcoin_history.RDA")  # named df
+```
+
+
+Enter parameters
+```{r}
+ath = 11420
+ath_date = "2018-03-04"
+atl = 8000
+atl_date = "2018-03-26"
+
+
+current_percent_decline = (ath-atl)/ ath *100      
+current_days_declining = as.numeric(as.Date(atl_date) - as.Date(ath_date))
+current_decline_per_day = current_percent_decline / current_days_declining
+
+current_percent_decline
+current_days_declining
+current_decline_per_day
+```
+
+
+
+```{r}
+#predict days declining based on decline per day
+fit1 = lm(log_days_declining ~ log_decline_per_day, data = crash_history_df)
+fit1_conf_ci = exp(predict(fit1, data.frame(log_decline_per_day = log(current_decline_per_day)), se.fit=T, type='response',interval = "conf")$fit)
+fit1_conf_ci_low = as.Date(ath_date) + fit1_conf_ci[2]
+fit1_conf_ci_mean = as.Date(ath_date) + fit1_conf_ci[1]
+fit1_conf_ci_high = as.Date(ath_date) + fit1_conf_ci[3]
+
+# Statistical analysis of days recovering vs. days declining
+fit2 = lm(log_days_recovering ~ log_days_declining + percent_decline, data = crash_history_df)
+fit2_conf_ci = exp(predict(fit2, data.frame(log_days_declining = log(current_days_declining), percent_decline = current_percent_decline), se.fit=T, type='response',interval = "conf")$fit)
+fit2_conf_ci_low = as.Date(ath_date) + fit2_conf_ci[2]
+fit2_conf_ci_mean = as.Date(ath_date) + fit2_conf_ci[1]
+fit2_conf_ci_high = as.Date(ath_date) + fit2_conf_ci[3]
+
+
+print(paste("Crash should end between", format(fit1_conf_ci_low,"%B %d, %Y"), "and", format(fit1_conf_ci_high,"%B %d, %Y"), "with an expected date of", format(fit1_conf_ci_mean,"%B %d, %Y")))
+
+print(paste("Prices will return to the all time high of $",ath, "between", format(fit2_conf_ci_low,"%B %d, %Y"), "and", format(fit2_conf_ci_high,"%B %d, %Y"), "with an expected date of", format(fit2_conf_ci_mean,"%B %d, %Y")))
+```
+
+Fit diagnostics
+```{r}
+par(mfrow = c(2,2))
+colnames(df)
+# Scatterplot matrix and correlation matrix
+#pairs(df[c(3,7,8,10,11)], lower.panel=panel.smooth, upper.panel=panel.cor)
+
+# Diagnostic for predicting days declining
+final.fit = lm(log.days.ath.atl ~ days.ath.atl + pct.oatl.ath + reg.ath.atl + 
+    log.pct.oatl.ath + log.days.oatl.ath + log.reg.ath.atl,df)
+
+summary(final.fit)
+
+fit.predict = predict(final.fit,df,type="response")
+
+df2 = cbind(df,fit.predict)
+
+ggscatter(df2, x = "fit.predict", y= "log.days.ath.atl", add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson") %>%
+    ggpar(xlab = "Predicted", ylab= "Observed", title = "Observed vs. Predicted Duration of BTC Corrections (Log Transformed)")
+
+
+
+
+# Diagnostic for predicting days recovering
+#summary(fit2)
+#plot(fit2)
+
+```
+
+
+
+Creates loess curve graph. 
+```{r}
+correlation = cor(crash_history_df$log_decline_per_day, crash_history_df$log_days_declining)
+    
+ggplot(crash_history_df, aes(x=decline_per_day, y=days_declining)) +
+    geom_point(size=4) +
+	    #geom_point(size=4, color=percent_decline) +
+        geom_smooth(method="lm", fill="darkorange", color = "orange", alpha = 0.3, size=2) +
+    geom_vline(xintercept = current_decline_per_day, color="red", size=10,alpha=0.3) +
+	    geom_vline(xintercept = current_decline_per_day, color="red") +
+    scale_y_continuous(breaks=round(exp(seq(0,6.5,by=0.2)),0),trans=log2_trans()) +
+    scale_x_continuous(breaks= round(exp(seq(0,25,by=0.2)),0), trans=log2_trans()) +
+    ggtitle("Prediction of BTC Crash Duration (Log Transformed)") +
+    theme_economist() + scale_colour_economist() +
+    xlab("Average % Decline Per Day from All Time High") +
+    ylab("Total # of Days Crash Lasted") +
+    #annotate("text", label = "Current Crash", x = exp(current_decline_per_day - 0.05), y = 1.5, size = 4, colour = "red") +
+	annotate("text", label = "Current Crash", x = current_decline_per_day - 0.05, y = 1.5, size = 4, colour = "red") +
+    #geom_label(x = 3.3, y = 7.5, label = paste("Orange Model = Linear", "\n", "Green Model = Loess", "\n", "Correlation = ", as.character(round(correlation,2)))) +
+    geom_text_repel(aes(label = date))          # Adds price labels
+
+#ggsave('crash_prediction.png',width=7)
+```
+
+```{r}
+ggscatter(crash_history_df, x = "log_days_declining", y= "log_days_recovering", add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson") %>%
+    ggpar(xlab = "Log of Days Declining", ylab= "Log of Days Recovering", title = "Predicting Number of Days to Recover to All Time High")
+
+mfpar
+```
+

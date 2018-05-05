@@ -1,0 +1,99 @@
+
+
+```{r}
+setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
+source("custom_functions.R")
+
+df<-read_excel("btc_correction_dates.xlsx") %>% mutate(ath.date = as.Date(ath.date)) %>% mutate(atl.date = as.Date(atl.date))
+
+bitcoin_history = getCoins("Bitcoin")
+btc.df = bitcoin_history %>% dplyr::rename(price = close) %>% dplyr::select(date,price)
+
+df$nath.date = c(df$ath.date[-1],NA)
+
+btc.df2 = btc.df %>% dplyr::rename(ath.date = date) %>% dplyr::rename(ath = price)
+btc.df3 = btc.df %>% dplyr::rename(atl.date = date) %>% dplyr::rename(atl = price)
+btc.df4 = btc.df %>% dplyr::rename(nath.date = date) %>% dplyr::rename(nath = price)
+
+df = left_join(df,btc.df2,by="ath.date") %>% left_join(btc.df3,by="atl.date") %>% left_join(btc.df4,by="nath.date")
+
+#manually entering missing data
+df[df$ath.date == as.Date("2013-04-09"), "ath"] = 234
+df[df$ath.date == as.Date("2013-04-09"), "atl"] = 70.1
+df[df$ath.date == as.Date("2013-04-09"), "nath"] = 153
+df[df$ath.date == as.Date("2013-04-24"), "ath"] = 154
+df[df$ath.date == as.Date("2018-01-06"), "nath.date"] = as.Date("2018-03-03")
+df[df$ath.date == as.Date("2018-01-06"), "nath"] = 11500
+
+# Adds new variables
+df = df %>%
+	mutate(days.ath.atl = as.numeric(atl.date - ath.date)) %>%
+	mutate(days.atl.nath = as.numeric(nath.date - atl.date)) %>%
+	mutate(pct.ath.atl = (ath-atl)/ath * 100) %>%
+	mutate(pct.atl.nath = (nath-atl)/atl * 100) %>%
+	mutate(pct.day.ath.atl = pct.ath.atl/days.ath.atl)
+
+df$pct.oatl.ath = c(NA,df$pct.atl.nath)[-(nrow(df)+1)]
+df$days.oatl.ath = c(NA,df$days.atl.nath)[-(nrow(df)+1)]
+df = df %>% mutate(pct.day.oatl.ath = pct.oatl.ath/days.oatl.ath)
+
+df$pct.oath.oatl = c(NA,df$pct.ath.atl)[-(nrow(df)+1)]
+df$days.oath.oatl = c(NA,df$days.ath.atl)[-(nrow(df)+1)]
+df = df %>% mutate(pct.day.oath.oatl = pct.oath.oatl/days.oath.oatl)
+
+
+# Creates regression of ath to atl
+df$reg.ath.atl = rep(NA,nrow(df))
+numbers = seq(1,nrow(df),1)
+
+for (i in 1:nrow(df)) {
+prices = btc.df %>% filter(date <= df[[i,2]], date >= df[[i,1]]) %>% dplyr::select(price) 
+if (nrow(prices) == 0 ){
+	df$reg.ath.atl[i] = NA
+} else {
+numbers = seq(from=1,to=nrow(prices),by=1)
+reg.df = cbind(prices,numbers)
+df$reg.ath.atl[i] = -(lm(price~numbers,reg.df)$coefficients[[2]] / df[[i,"ath"]])*100
+}
+}
+
+
+# Creates Season category variable
+season = function(date){
+	month1 = as.numeric(month(date))
+	if (month1 >=1 && month1 < 4){
+		season_class = 0
+	}else if (month1 >=4 && month1 < 7){
+		season_class = 1
+	}else if (month1 >=7 && month1 <10){
+		season_class = 2
+	}else if (month1 >=10 && month1 <=12){
+		season_class = 3
+	}
+	return(season_class)
+}
+
+for (i in 1:nrow(df)){
+df$seas.ath.date[i] = season(df$ath.date[i])
+}
+df$seas.ath.date = as.factor(df$seas.ath.date)
+
+
+
+# Creates log of all numerical variables
+log.df = log(df[,7:(ncol(df)-1)])
+names(log.df) <- paste0("log.",names(log.df))
+df = cbind(df,log.df)
+
+
+# Creates factor if bull or bear market
+for (i in 1:nrow(df)){		
+  df$bull[i] = ifelse(df$nath[i] - df$ath[i] < 0, 0,1)  # 1 if bull market, 0 if bull for previous all time high
+}
+df$bull = as.factor(df$bull)
+
+
+
+save(df,file="bitcoin_history.RDA")
+```
+
