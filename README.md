@@ -1,12 +1,20 @@
+## This analysis uses R code. You must have R and RStudio installed.
+
+# There are only four factors that determine your success in investing in cryptocurrencies:
+ 1) Which coins you invest in
+ 2) When you buy
+ 3) When you sell
+ 4) How much money you invest
+
 ## To start using this analysis:
  Download the zip file from this Github page. Unzip and put the folder in your Desktop. Make sure the folder is named "Crypto_Analysis-master".
 
 
-## To predict what day a recent Bitcoin correction will end:
-Open and run all code chunks for crash_duration_prediction.Rmd. Currently need to manually input dates and prices.
-Currently working on more accurate bitcoin prediction model (btc_prediction_test.Rmd)
+## Current things this analysis can do:
 
+# 1) Which coins to invest in to give highest returns?
+* Show a table of the percent changes across time for all coins. (Ranks coins with highest gains for each time interval)
+* Show a graph of multiple selected coins percent change (USD) from selected start and end date.
 
-## To compare which coins have the highest gains on average compared to other coins:
-Open and run all code chunks from compare_coin_price_changes.Rmd. Option to see in table format or graph format.
-
+# 2) When should I buy?
+* Predict the date when the current correction (downtrend) for Bitcoin will end.
