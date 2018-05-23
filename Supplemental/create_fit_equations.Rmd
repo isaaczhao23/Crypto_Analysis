@@ -5,55 +5,245 @@ setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
 source("custom_functions.R")
 source("cor_matrix.R")
 load("bitcoin_history.RDA")  # named df
-#btc_2018 = getCoins(coin="Bitcoin",start_date='20171201') %>% dplyr::rename(price = close) %>% dplyr::select(date,price)
 ```
 
-Finding a model for predicting duration of correction
-```{r}
-# Selecting variables to use
-colnames(df)
-df2 = df[,c(12,13,14,15,16,17,18,19,20,21,25,26,27,28,29,30,31)]
-df2 = na.omit(df2)
-colnames(df2)
-pairs(df2[c(1:length(df2))], lower.panel=panel.smooth, upper.panel=panel.cor)
 
-fit = lm(log.days.ath.atl ~ . , df2)
-step_fit <- stepAIC(fit, direction="both")
+Finding a model for predicting when downtrend will end
+```{r}
+colnames(df)
+df2 = df[,c("pct.ooath.ooatl",     "pct.ooatl.oath",      "pct.oath.oatl",       "pct.oatl.ath",       
+    "pct.ooath.oath",      "pct.oath.ath",         
+ "pct.ooatl.oatl",     "days.ooath.ooatl",    "days.ooatl.oath",    
+ "days.oath.oatl",      "days.oatl.ath",           "days.ooath.oath",    
+ "days.oath.ath",        "days.ath.atl", "days.ooatl.oatl",     
+ "pct.day.ooath.ooatl", "pct.day.ooatl.oath",  "pct.day.oath.oatl",   "pct.day.oatl.ath",     
+  "pct.day.ooath.oath",  "pct.day.oath.ath",    "pct.day.ooatl.oatl", 
+ "reg.ooath.ooatl",     "reg.ooatl.oath",      "reg.oath.oatl",      
+ "reg.oatl.ath",         "reg.ooath.oath",      "reg.oath.ath",       
+  "reg.ooatl.oatl",     "bad.months", "reg.ath.atl",         
+ "ath.bull")]
+df2 = na.omit(df2)	
+hist(df$days.ath.atl,col="blue",breaks=25)
+fit = lm(I(log(days.ath.atl)) ~ . , df2)
+step_fit <- stepAIC(fit2, direction="both")
 step_fit$anova
-fit1 = lm(log.days.ath.atl ~ pct.day.oath.oatl + reg.ath.atl + I(reg.ath.atl^2),df2)
-#save(fit1,file="fit1.Rda")
+
+# Everything using aic
+fit1 = lm(I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + pct.ooath.oath + 
+    days.ooath.ooatl + days.ooatl.oath + pct.day.oath.oatl + 
+    pct.day.oatl.ath + pct.day.ooath.oath + pct.day.oath.ath + 
+    reg.ooath.ooatl + reg.oath.oatl + reg.ooath.oath + bad.months + 
+    reg.ath.atl + ath.bull,df2)
+
+# Everything from fit1 including logs
+fit2 = fit1 = lm(I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + pct.ooath.oath + 
+    days.ooath.ooatl + days.ooatl.oath + pct.day.oath.oatl + 
+    pct.day.oatl.ath + pct.day.ooath.oath + pct.day.oath.ath + 
+    reg.ooath.ooatl + reg.oath.oatl + reg.ooath.oath + bad.months + 
+    reg.ath.atl + ath.bull +
+	I(log(pct.ooath.ooatl)) + I(log(pct.ooatl.oath)) + I(log(abs(pct.ooath.oath))) + 
+    I(log(days.ooath.ooatl)) + I(log(days.ooatl.oath)) + I(log(pct.day.oath.oatl)) + 
+    I(log(pct.day.oatl.ath)) + I(log(abs(pct.day.ooath.oath))) + I(log(abs(pct.day.oath.ath))) + 
+    I(log(reg.ooath.ooatl)) + I(log(reg.oath.oatl)) + I(log(abs(reg.ooath.oath))) +
+	I(log(reg.ath.atl))
+	,df2)
+
+
+# fit2 run in bic
+fit3 = lm(formula = I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + 
+    pct.ooath.oath + days.ooath.ooatl + pct.day.oatl.ath + pct.day.ooath.oath + 
+    pct.day.oath.ath + reg.ooath.ooatl + bad.months + reg.ath.atl + 
+    ath.bull, data = df2)
+
+summary(fit3)
+# fit2 run in aic
+fit4 = lm(I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + pct.ooath.oath + 
+    days.ooath.ooatl + days.ooatl.oath + pct.day.oatl.ath + pct.day.oath.ath + 
+    reg.ooath.oath + bad.months + reg.ath.atl + ath.bull + I(log(pct.ooath.ooatl)) + 
+    I(log(pct.ooatl.oath)) + I(log(abs(pct.ooath.oath))) + I(log(days.ooatl.oath)) + 
+    I(log(pct.day.oath.oatl)) + I(log(abs(pct.day.ooath.oath))) + 
+    I(log(abs(pct.day.oath.ath))) + I(log(reg.ooath.ooatl)) + 
+    I(log(reg.oath.oatl)) + I(log(reg.ath.atl)),df2)
+
+
+fit5 = lm(I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + 
+    pct.ooath.oath + days.ooath.ooatl + days.oatl.ath + pct.day.oatl.ath + 
+    pct.day.oath.ath + reg.oatl.ath + reg.ooath.oath + reg.oath.ath + 
+    bad.months + ath.bull + reg.ath.atl + I(log(pct.ooath.ooatl)) + 
+    I(log(pct.ooatl.oath)) + I(log(abs(pct.ooatl.oatl))) + I(log(days.ooath.ooatl)) + 
+    I(log(days.oatl.ath)) + I(log(reg.oatl.ath)) + I(log(reg.ath.atl)),df2)
+
+# Fit3 removing terms
+fit6 = lm(formula = I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + 
+    pct.ooath.oath + 
+    bad.months + reg.ath.atl, data = df2)
+
+
+# Fit4 removing terms
+fit7 = lm(I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + pct.ooath.oath + 
+    days.ooath.ooatl + days.ooatl.oath + pct.day.oatl.ath + pct.day.oath.ath + 
+    reg.ooath.oath + bad.months + reg.ath.atl + ath.bull + I(log(pct.ooath.ooatl)) + 
+    I(log(pct.ooatl.oath)) + 
+   I(log(reg.ooath.ooatl)) + 
+     I(log(reg.ath.atl)),df2)
+
+
+downtrend_model2 = lm(I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + pct.ooath.oath + 
+    days.ooath.ooatl + days.ooatl.oath  +
+    reg.ooath.oath + bad.months + reg.ath.atl + I(log(pct.ooath.ooatl)) + 
+    I(log(pct.ooatl.oath)) + 
+   I(log(reg.ooath.ooatl)) + 
+     I(log(reg.ath.atl)),df2)
+
+summary(fit8)
+
+downtrend_model = lm(formula = I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + 
+    pct.ooath.oath + days.ooath.ooatl + days.oatl.ath + pct.day.oatl.ath + 
+    pct.day.oath.ath + reg.oatl.ath + reg.ooath.oath + reg.oath.ath + 
+    bad.months + ath.bull + reg.ath.atl + I(log(pct.ooath.ooatl)) + 
+    I(log(pct.ooatl.oath)) + I(log(abs(pct.ooatl.oatl))) + I(log(days.ooath.ooatl)) + 
+    I(log(days.oatl.ath)) + I(log(reg.oatl.ath)) + I(log(reg.ath.atl)) + 
+    pct.ooatl.oath:ath.bull + pct.ooath.oath:ath.bull + pct.day.oath.ath:ath.bull, 
+    data = df2)
+
+summary(downtrend_model)
+#step_fit <- stepAIC(fit3, direction="both")
+#step_fit$anova
+stepwise(fit, direction = "backward/forward", criterion = "BIC")
+# Compare models
+ldply(list(fit1, fit2,fit3,fit4,fit5,fit6,fit7,fit8,downtrend_model), model_fit_stats)
+
+
+fit1_conf_ci = exp(predict(fit8, pred.df, se.fit=T, type='response',interval = "conf",level=0.68)$fit)
+fit1_conf_ci_low = as.Date(ath.date) + fit1_conf_ci[2] 
+fit1_conf_ci_mean = as.Date(ath.date) + fit1_conf_ci[1]
+fit1_conf_ci_high = as.Date(ath.date) + fit1_conf_ci[3]
+
+fit1_conf_ci_low
+fit1_conf_ci_mean
+fit1_conf_ci_high
+
+# comparing predicted to actual difference
+df.predicted.diff = cbind(data.frame(observed = df2[,"days.ath.atl"]),as.data.frame(exp(predict(downtrend_model2, df2, se.fit=T, type='response',interval = "conf",level=0.68)$fit))) %>% arrange(fit) %>% dplyr::rename(observed = days.ath.atl) %>%
+	mutate(diff = fit-observed) %>% mutate(diff.L = lwr - observed) %>% mutate(diff.U = upr - observed) %>% mutate(abs_diff = abs(diff))
+
+ggplot(df.predicted.diff, aes(x = fit, y = diff)) +
+    geom_point(size = 3,color="blue",alpha=0.7) +
+	geom_hline(aes(yintercept=0),color="springgreen4",linetype="dashed") +
+	geom_hline(aes(yintercept=0),color="springgreen3",alpha=0.25,size=20) +
+	geom_hline(aes(yintercept=5),color="springgreen4",linetype="dotted") +
+	geom_hline(aes(yintercept=-5),color="springgreen4",linetype="dotted") +
+	#geom_vline(aes(xintercept=30),color="springgreen4",linetype="dotted") +
+    geom_errorbar(aes(ymax = diff.U, ymin = diff.L),color="red",alpha=0.5, width=1) +
+	scale_x_continuous(name="Predicted Number of Days Downtrend Will Last", breaks=seq(0,100,5))+
+	scale_y_continuous(name="Difference in Days Between Prediction and Actual Downtrend Duration (Prediction - Actual)",breaks=seq(-100,100,5))+
+    theme_economist() + scale_colour_economist() +
+	ggtitle("Error of Linear Model Predicting BTC Downtrend Duration") 
+	
+
+
+# See errors better
+ggplot(df.predicted.diff, aes(x = fit, y = abs_diff)) +
+    geom_point(size = 3,color="blue",alpha=0.7) +
+	stat_smooth(geom = 'area', method = 'loess', span = .4 ,alpha = 1/2, fill = "lightblue4") + 
+	geom_hline(aes(yintercept=0),color="green4",linetype="dashed",size=1.2,alpha=0.75) +
+	#geom_hline(aes(yintercept=0),color="springgreen3",alpha=0.25,size=25) +
+	geom_hline(aes(yintercept=5),color="springgreen3",linetype="dashed",size=1.2,alpha=0.75) +
+	geom_hline(aes(yintercept=10),color="indianred2",linetype="dashed",size=1.2,alpha=0.75) +
+	#geom_hline(aes(yintercept=-5),color="springgreen4",linetype="dotted") +
+	#geom_vline(aes(xintercept=30),color="springgreen4",linetype="dotted") +
+    #geom_errorbar(aes(ymax = diff.U, ymin = diff.L),color="red",alpha=0.5, width=1) +
+	scale_x_continuous(name="Predicted Number of Days Downtrend Will Last", breaks=seq(0,100,5))+
+	scale_y_continuous(name="Difference in Days Between Prediction and Actual Downtrend",breaks=seq(-100,100,5))+
+    theme_economist() + scale_colour_economist() +
+	ggtitle("Error of Linear Model Predicting BTC Downtrend Duration")
+
+
+# Average difference when prediction is less than a month is 3 days
+df.predicted.diff %>% filter(fit > 5 & fit <= 30) %>%  dplyr::select(abs_diff) %>% colMeans()
+# Average difference when predictino is between 1 to 2 months is 7 days
+df.predicted.diff %>% filter(fit > 30 & fit <= 60) %>% dplyr::select(abs_diff) %>% colMeans()
+# Average difference when predictino is more than 2 months is 2 days
+df.predicted.diff %>% filter(fit > 60) %>% dplyr::select(abs_diff) %>% colMeans()
+
+
+sjt.lm(downtrend_model2)
+save(downtrend_model,file="downtrend_model.Rda")
+save(downtrend_model2,file="downtrend_model2.Rda")
+```
+
+
+
+
+Finding a model for predicting when the next correction will start
+```{r}
+colnames(df)
+df3 = df[,c(7,9,11:22,24:34)]
+df3 = na.omit(df3)
+sapply(df3,class)
+#df3 = df3[-12,]
+#fit = lm(log.days.atl.nath ~ ., df3)
+#step_fit <- stepAIC(fit5, direction="backward")
+#step_fit$anova
+
+uptrend_model = lm(log.days.atl.nath ~ pct.ath.atl + pct.day.oath.oatl + reg.atl.nath + 
+    log.days.oatl.ath + log.days.oath.oatl + 
+    I(days.oath.oatl^2) + I(reg.ath.atl^2) + I(days.oath.oatl^3) + 
+    I(log.pct.ath.atl^3) + season + 
+    log.days.oath.oatl:season + log.reg.atl.nath:season + I(log.reg.atl.nath^3):bull + 
+    pct.day.oath.oatl:bull + reg.atl.nath:bull + log.days.oatl.ath:bull + 
+    log.reg.atl.nath:bull + season:bull,df3)
+
+
 
 # Comparing fits
-summary(fit1)
+#sjt.lm(fit2)
+#summary(fit2)
+#summary(fit5)
 
-# Observed vs. Predicted Plot
-fit1.predict = predict(fit1,df2,type="response")
-df.predict.fit1 = cbind(df2,fit1.predict)
-ggscatter(df.predict.fit1, x = "fit1.predict", y= "log.days.ath.atl", add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson") %>% ggpar(xlab = "Predicted", ylab= "Observed", title = "Observed vs. Predicted Duration of BTC Corrections (Log Transformed)")
 
-# Residual Diagnostics
-plot(fit1)
+df.predicted.diff = cbind(data.frame(observed = exp(df3[,"log.days.atl.nath"]),as.data.frame(exp(predict(uptrend_model, df3, se.fit=T, type='response',interval = "conf",level=0.68)$fit)))) %>% arrange(fit) %>% 
+	mutate(diff = fit-observed) %>% mutate(diff.L = lwr - observed) %>% mutate(diff.U = upr - observed) %>% mutate(abs_diff = abs(diff))
 
-df.predict.fit1 = cbind(df.predict.fit1,resid(fit1))
+ggplot(df.predicted.diff, aes(x = fit, y = diff)) +
+    geom_point(size = 3,color="blue",alpha=0.7) +
+	geom_hline(aes(yintercept=0),color="springgreen4",linetype="dashed") +
+	geom_hline(aes(yintercept=0),color="springgreen3",alpha=0.25,size=12) +
+	geom_hline(aes(yintercept=5),color="springgreen4",linetype="dotted") +
+	geom_hline(aes(yintercept=-5),color="springgreen4",linetype="dotted") +
+    geom_errorbar(aes(ymax = diff.U, ymin = diff.L),color="red",alpha=0.5, width=1) +
+	scale_x_continuous(name="Predicted Number of Days Uptrend Will Last", breaks=seq(0,5000,5))+
+	scale_y_continuous(name="Difference in Days Between Prediction and Actual Correction Duration (Prediction - Actual)",breaks=seq(-100,100,5))+
+    theme_economist() + scale_colour_economist() +
+	#geom_smooth(method="loess", fill="orange", color = "orange", alpha = 0.2, size=0.5,span=0.5) +
+	#geom_smooth(method="lm", fill="yellow", color = "yellow", alpha = 0.2, size=0.5) +
+	ggtitle("Error of Linear Model Predicting BTC Uptrend Duration")
 
-ggplot(df.predict.fit1,aes(x=fit1.predict, y=resid(fit1))) +
-geom_point(size=4) + 
-geom_smooth(method="lm", fill="darkorange", color = "orange", alpha = 0.3, size=2) 
 
-```
+ggplot(df.predicted.diff, aes(x = fit, y = abs_diff)) +
+    geom_point(size = 3,color="blue",alpha=0.7) +
+	stat_smooth(geom = 'area', method = 'loess', span = .4 ,alpha = 0.3, fill = "lightblue4") + 
+	geom_hline(aes(yintercept=0),color="green4",linetype="dashed",size=1.2,alpha=0.75) +
+	#geom_hline(aes(yintercept=0),color="springgreen3",alpha=0.25,size=25) +
+	geom_hline(aes(yintercept=5),color="springgreen3",linetype="dashed",size=1.2,alpha=0.75) +
+	geom_hline(aes(yintercept=10),color="indianred2",linetype="dashed",size=1.2,alpha=0.75) +
+	#geom_hline(aes(yintercept=-5),color="springgreen4",linetype="dotted") +
+	#geom_vline(aes(xintercept=30),color="springgreen4",linetype="dotted") +
+    #geom_errorbar(aes(ymax = diff.U, ymin = diff.L),color="red",alpha=0.5, width=1) +
+	scale_x_continuous(name="Predicted Number of Days Uptrend Will Last", breaks=seq(0,1000,10))+
+	scale_y_continuous(name="Difference in Days Between Predicted and Actual Uptrend Duration",breaks=seq(-100,100,5))+
+    theme_economist() + scale_colour_economist() +
+	ggtitle("Error of Linear Model Predicting BTC Uptrend Duration")
 
-Finding a model for predicting when the next correction will happen
-```{r}
-colnames(df)
-df3 = df[,c(1)]
-df3 = na.omit(df3)
 
-fit = lm(log.days.atl.nath ~ . + I(.^2), df2)
-step_fit <- stepAIC(fit, direction="both")
-step_fit$anova
+# Average difference when prediction is less than a month is 2.3 days
+df.predicted.diff %>% filter(fit > 5 & fit <= 30) %>% mutate(abs_diff = abs(diff)) %>% dplyr::select(abs_diff) %>% colMeans()
+# Average difference when predictino is between 1 to 2 months is 4.5 days
+df.predicted.diff %>% filter(fit > 30 & fit <= 60) %>% mutate(abs_diff = abs(diff)) %>% dplyr::select(abs_diff) %>% colMeans()
+# Average difference when predictino is more than 2 months is 20.4 days
+df.predicted.diff %>% filter(fit > 60) %>% mutate(abs_diff = abs(diff)) %>% dplyr::select(abs_diff) %>% colMeans()
 
-fit1 = lm()
-
+#save(uptrend_model,file="uptrend_model.Rda")
 ```
 
 

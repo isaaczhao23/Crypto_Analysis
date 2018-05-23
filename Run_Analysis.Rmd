@@ -59,23 +59,25 @@ filter_rank:
 
 Creates comparison graph of price changes in USD by selected name.
 ```{r}
-comparison_graph(comparison_date="2018-04-07", filter_name = c("Bitcoin","Ethereum","Nano","TRON","Ripple","Verge"))
+comparison_graph(comparison_date="2018-04-28", filter_name = c("Bitcoin","Nano","TRON","Ripple","Verge","Binance Coin","Stellar","Cardano","VeChain"))
 ```
 
 # Creates comparison graph of top 5 marketcap rank coins
 ```{r}
-comparison_graph(comparison_date="2018-03-15", filter_rank = c(1:5))
+comparison_graph(comparison_date="2018-04-05", filter_rank = c(11:18))
 ```
 
 #################################################################################
 
 ### Predict when correction will end ####
 
+ooath.date = date that second last correction started
+ooatl.date = date that second last correction ended
 oath.date = date that last correction started
 oatl.date = date that last correction ended
 ath.date = date that current correction started
 ```{r}
-predict_correction(oath.date = "2018-01-06", oatl.date = "2018-02-05", ath.date = "2018-03-04")
+predict_correction(ooath.date = "2018-01-06", ooatl.date = "2018-02-05",oath.date = "2018-03-04", oatl.date = "2018-04-06", ath.date = "2018-05-05")
 ```
 
 

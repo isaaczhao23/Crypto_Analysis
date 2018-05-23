@@ -4,93 +4,114 @@
 setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
 source("custom_functions.R")
 
+# Creates dates for uptrend/downtrend
 df<-read_excel("btc_correction_dates.xlsx") %>% mutate(ath.date = as.Date(ath.date)) %>% mutate(atl.date = as.Date(atl.date))
-
-bitcoin_history = getCoins("Bitcoin")
-btc.df = bitcoin_history %>% dplyr::rename(price = close) %>% dplyr::select(date,price)
-
+n=nrow(df)
+df$ooath.date = as.Date(c(NA,NA, df$ath.date[-c(n,n-1)]), origin="1970-01-01")
+df$ooatl.date = as.Date(c(NA,NA, df$atl.date[-c(n,n-1)]),origin="1970-01-01")
+df$oath.date = as.Date(c(NA, df$ath.date[-n]),origin="1970-01-01")
+df$oatl.date = as.Date(c(NA, df$atl.date[-n]),origin="1970-01-01")
 df$nath.date = c(df$ath.date[-1],NA)
+df$natl.date = c(df$atl.date[-1],NA)
 
+# btc.df has the price for every date
+bitcoin_history_early = read_excel("btc_early_history.xlsx") %>% dplyr::rename(price = close) %>% dplyr::select(date,price) %>% mutate(date = as.Date(date))
+bitcoin_history = getCoins("Bitcoin")
+btc.df1 = bitcoin_history %>% dplyr::rename(price = close) %>% dplyr::select(date,price) 
+btc.df = rbind(bitcoin_history_early,btc.df1)
+
+# Assigns prices for dates of uptrend/downtrend
 btc.df2 = btc.df %>% dplyr::rename(ath.date = date) %>% dplyr::rename(ath = price)
 btc.df3 = btc.df %>% dplyr::rename(atl.date = date) %>% dplyr::rename(atl = price)
-btc.df4 = btc.df %>% dplyr::rename(nath.date = date) %>% dplyr::rename(nath = price)
+df = left_join(df,btc.df2,by="ath.date") %>% left_join(btc.df3,by="atl.date")
 
-df = left_join(df,btc.df2,by="ath.date") %>% left_join(btc.df3,by="atl.date") %>% left_join(btc.df4,by="nath.date")
+# Create ooath,ooathl,oath,oatl,nath prices
+n=nrow(df)
+df$ooath = c(NA,NA, df$ath[-c(n,n-1)])
+df$ooatl = c(NA,NA,df$atl[-c(n,n-1)])
+df$oath = c(NA, df$ath[-n])
+df$oatl = c(NA, df$atl[-n])
+df$nath = c(df$ath[-1],NA)
+df$natl = c(df$atl[-1],NA)
 
-#manually entering missing data
-df[df$ath.date == as.Date("2013-04-09"), "ath"] = 234
-df[df$ath.date == as.Date("2013-04-09"), "atl"] = 70.1
-df[df$ath.date == as.Date("2013-04-09"), "nath"] = 153
-df[df$ath.date == as.Date("2013-04-24"), "ath"] = 154
-df[df$ath.date == as.Date("2018-01-06"), "nath.date"] = as.Date("2018-03-03")
-df[df$ath.date == as.Date("2018-01-06"), "nath"] = 11500
+# Manually enter missing nath info
+df[df$ath.date == as.Date("2018-03-04"), "nath"] = 10000
+df[df$ath.date == as.Date("2018-03-04"), "nath.date"] = as.Date("2018-05-05")
 
-# Adds new variables
-df = df %>%
-	mutate(days.ath.atl = as.numeric(atl.date - ath.date)) %>%
-	mutate(days.atl.nath = as.numeric(nath.date - atl.date)) %>%
-	mutate(pct.ath.atl = (ath-atl)/ath * 100) %>%
-	mutate(pct.atl.nath = (nath-atl)/atl * 100) %>%
-	mutate(pct.day.ath.atl = pct.ath.atl/days.ath.atl)
+# Create percent change of uptrend/downtrend
+df$pct.ooath.ooatl = (df$ooath - df$ooatl)/df$ooath * 100
+df$pct.ooatl.oath = (df$oath - df$ooatl)/df$ooatl * 100
+df$pct.oath.oatl = (df$oath - df$oatl)/df$oath * 100
+df$pct.oatl.ath = (df$ath - df$oatl)/df$oatl * 100
+df$pct.ath.atl = (df$ath - df$atl)/df$ath * 100
+df$pct.atl.nath = (df$nath - df$atl)/df$atl * 100
+df$pct.ooath.oath = (df$oath - df$ooath)/df$ooath * 100
+df$pct.oath.ath = (df$ath - df$oath)/df$oath * 100
+df$pct.ath.nath = (df$nath - df$ath)/df$ath * 100
+df$pct.ooatl.oatl = (df$oatl - df$ooatl)/df$ooatl * 100
+df$pct.oatl.atl = (df$atl - df$oatl)/df$oatl * 100
+df$pct.atl.natl = (df$natl - df$atl)/df$atl * 100
 
-df$pct.oatl.ath = c(NA,df$pct.atl.nath)[-(nrow(df)+1)]
-df$days.oatl.ath = c(NA,df$days.atl.nath)[-(nrow(df)+1)]
-df = df %>% mutate(pct.day.oatl.ath = pct.oatl.ath/days.oatl.ath)
+# Create duration of days
+df$days.ooath.ooatl = as.numeric(df$ooatl.date - df$ooath.date)
+df$days.ooatl.oath = as.numeric(df$oath.date - df$ooatl.date)
+df$days.oath.oatl = as.numeric(df$oatl.date - df$oath.date)
+df$days.oatl.ath = as.numeric(df$ath.date - df$oatl.date)
+df$days.ath.atl = as.numeric(df$atl.date - df$ath.date)
+df$days.atl.nath = as.numeric(df$nath.date - df$atl.date)
+df$days.ooath.oath = as.numeric(df$oath.date - df$ooath.date)
+df$days.oath.ath = as.numeric(df$ath.date - df$oath.date)
+df$days.ath.nath = as.numeric(df$nath.date - df$ath.date)
+df$days.ooatl.oatl = as.numeric(df$oatl.date - df$ooatl.date)
+df$days.oatl.atl = as.numeric(df$atl.date - df$oatl.date)
+df$days.atl.natl = as.numeric(df$natl.date - df$atl.date)
 
-df$pct.oath.oatl = c(NA,df$pct.ath.atl)[-(nrow(df)+1)]
-df$days.oath.oatl = c(NA,df$days.ath.atl)[-(nrow(df)+1)]
-df = df %>% mutate(pct.day.oath.oatl = pct.oath.oatl/days.oath.oatl)
+# Create percent per day
+df$pct.day.ooath.ooatl = df$pct.ooath.ooatl/df$days.ooath.ooatl
+df$pct.day.ooatl.oath = df$pct.ooatl.oath/df$days.ooatl.oath
+df$pct.day.oath.oatl = df$pct.oath.oatl/df$days.oath.oatl
+df$pct.day.oatl.ath = df$pct.oatl.ath/df$days.oatl.ath
+df$pct.day.ath.atl = df$pct.ath.atl/df$days.ath.atl
+df$pct.day.atl.nath = df$pct.atl.nath/df$days.atl.nath
+df$pct.day.ooath.oath = df$pct.ooath.oath/df$days.ooath.oath
+df$pct.day.oath.ath = df$pct.oath.ath/df$days.oath.ath
+df$pct.day.ath.nath = df$pct.ath.nath/df$days.ath.nath
+df$pct.day.ooatl.oatl = df$pct.ooatl.oatl/df$days.ooatl.oatl
+df$pct.day.oatl.atl = df$pct.oatl.atl/df$days.oatl.atl
+df$pct.day.atl.natl = df$pct.atl.natl/df$days.atl.natl
 
-
-# Creates regression of ath to atl
-df$reg.ath.atl = rep(NA,nrow(df))
-numbers = seq(1,nrow(df),1)
-
-for (i in 1:nrow(df)) {
-prices = btc.df %>% filter(date <= df[[i,2]], date >= df[[i,1]]) %>% dplyr::select(price) 
-if (nrow(prices) == 0 ){
-	df$reg.ath.atl[i] = NA
-} else {
-numbers = seq(from=1,to=nrow(prices),by=1)
-reg.df = cbind(prices,numbers)
-df$reg.ath.atl[i] = -(lm(price~numbers,reg.df)$coefficients[[2]] / df[[i,"ath"]])*100
-}
-}
-
-
-# Creates Season category variable
-season = function(date){
-	month1 = as.numeric(month(date))
-	if (month1 >=1 && month1 < 4){
-		season_class = 0
-	}else if (month1 >=4 && month1 < 7){
-		season_class = 1
-	}else if (month1 >=7 && month1 <10){
-		season_class = 2
-	}else if (month1 >=10 && month1 <=12){
-		season_class = 3
-	}
-	return(season_class)
-}
-
-for (i in 1:nrow(df)){
-df$seas.ath.date[i] = season(df$ath.date[i])
-}
-df$seas.ath.date = as.factor(df$seas.ath.date)
-
+# Create regression
+df$reg.ooath.ooatl = abs(regression(start.date = df$ooath.date,end.date = df$ooatl.date))
+df$reg.ooatl.oath = abs(regression(start.date = df$ooatl.date,end.date = df$oath.date))
+df$reg.oath.oatl = abs(regression(start.date = df$oath.date,end.date = df$oatl.date))
+df$reg.oatl.ath = abs(regression(start.date = df$oatl.date,end.date = df$ath.date))
+df$reg.ath.atl = abs(regression(start.date = df$ath.date,end.date = df$atl.date))
+df$reg.atl.nath =  abs(regression(start.date = df$atl.date,end.date = df$nath.date))
+df$reg.ooath.oath =  regression(start.date = df$ooath.date,end.date = df$oath.date)
+df$reg.oath.ath = regression(start.date = df$oath.date,end.date = df$ath.date)
+df$reg.ath.nath = regression(start.date = df$ath.date,end.date = df$nath.date)
+df$reg.ooatl.oatl = regression(start.date = df$ooatl.date,end.date = df$oatl.date)
+df$reg.oatl.atl = regression(start.date = df$oatl.date,end.date = df$atl.date)
+df$reg.atl.natl = regression(start.date = df$atl.date,end.date = df$natl.date)
 
 
-# Creates log of all numerical variables
-log.df = log(df[,7:(ncol(df)-1)])
-names(log.df) <- paste0("log.",names(log.df))
-df = cbind(df,log.df)
+df$bad.months = bad.months.function(df$ath.date)
 
 
-# Creates factor if bull or bear market
+
+# Creates factor if ath is less than oath
 for (i in 1:nrow(df)){		
-  df$bull[i] = ifelse(df$nath[i] - df$ath[i] < 0, 0,1)  # 1 if bull market, 0 if bull for previous all time high
+  df$ath.bull[i] = ifelse(df$ath[i] < df$oath[i], 0,1)  
 }
-df$bull = as.factor(df$bull)
+df$ath.bull = as.factor(df$ath.bull)
+
+# Creates factor if atl is less than oatl
+for (i in 1:nrow(df)){		
+  df$atl.bull[i] = ifelse(df$atl[i] < df$oatl[i], 0,1)  
+}
+df$atl.bull = as.factor(df$atl.bull)
+
+
 
 
 
