@@ -81,18 +81,18 @@ df$pct.day.oatl.atl = df$pct.oatl.atl/df$days.oatl.atl
 df$pct.day.atl.natl = df$pct.atl.natl/df$days.atl.natl
 
 # Create regression
-df$reg.ooath.ooatl = abs(regression(start.date = df$ooath.date,end.date = df$ooatl.date))
-df$reg.ooatl.oath = abs(regression(start.date = df$ooatl.date,end.date = df$oath.date))
-df$reg.oath.oatl = abs(regression(start.date = df$oath.date,end.date = df$oatl.date))
-df$reg.oatl.ath = abs(regression(start.date = df$oatl.date,end.date = df$ath.date))
-df$reg.ath.atl = abs(regression(start.date = df$ath.date,end.date = df$atl.date))
-df$reg.atl.nath =  abs(regression(start.date = df$atl.date,end.date = df$nath.date))
-df$reg.ooath.oath =  regression(start.date = df$ooath.date,end.date = df$oath.date)
-df$reg.oath.ath = regression(start.date = df$oath.date,end.date = df$ath.date)
-df$reg.ath.nath = regression(start.date = df$ath.date,end.date = df$nath.date)
-df$reg.ooatl.oatl = regression(start.date = df$ooatl.date,end.date = df$oatl.date)
-df$reg.oatl.atl = regression(start.date = df$oatl.date,end.date = df$atl.date)
-df$reg.atl.natl = regression(start.date = df$atl.date,end.date = df$natl.date)
+df$reg.ooath.ooatl = abs(regression(start.date = df$ooath.date,end.date = df$ooatl.date,btc.df))
+df$reg.ooatl.oath = abs(regression(start.date = df$ooatl.date,end.date = df$oath.date,btc.df))
+df$reg.oath.oatl = abs(regression(start.date = df$oath.date,end.date = df$oatl.date,btc.df))
+df$reg.oatl.ath = abs(regression(start.date = df$oatl.date,end.date = df$ath.date,btc.df))
+df$reg.ath.atl = abs(regression(start.date = df$ath.date,end.date = df$atl.date,btc.df))
+df$reg.atl.nath =  abs(regression(start.date = df$atl.date,end.date = df$nath.date,btc.df))
+df$reg.ooath.oath =  regression(start.date = df$ooath.date,end.date = df$oath.date,btc.df)
+df$reg.oath.ath = regression(start.date = df$oath.date,end.date = df$ath.date,btc.df)
+df$reg.ath.nath = regression(start.date = df$ath.date,end.date = df$nath.date,btc.df)
+df$reg.ooatl.oatl = regression(start.date = df$ooatl.date,end.date = df$oatl.date,btc.df)
+df$reg.oatl.atl = regression(start.date = df$oatl.date,end.date = df$atl.date,btc.df)
+df$reg.atl.natl = regression(start.date = df$atl.date,end.date = df$natl.date,btc.df)
 
 
 df$bad.months = bad.months.function(df$ath.date)
@@ -112,7 +112,9 @@ for (i in 1:nrow(df)){
 df$atl.bull = as.factor(df$atl.bull)
 
 
-
+log.df = log(abs(df[,17:((ncol(df))-3)]))
+names(log.df) <- paste0("log.",names(log.df))
+df = cbind(df,log.df)
 
 
 save(df,file="bitcoin_history.RDA")

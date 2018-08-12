@@ -1,5 +1,5 @@
 source("check_packages.R")
-check_packages(c("MASS","plyr","RcmdrMisc", "tidyverse", "tidyr","scales", "crypto", "ggthemes", "directlabels", "shiny","ggpubr", "ggrepel","readxl","gridExtra","sjPlot","lubridate"))
+check_packages(c("ggpubr","RColorBrewer","MASS","plyr","RcmdrMisc", "tidyverse", "tidyr","scales", "crypto", "ggthemes", "directlabels", "shiny","ggpubr", "ggrepel","readxl","gridExtra","sjPlot","lubridate","dplyr","ggplot2"))
 
 ###############################################################################################
 ###############################################################################################
@@ -210,7 +210,7 @@ sjPlot::tab_df(output, title, alternate.rows=TRUE)
 ###############################################################################################
 
 
-comparison_graph = function(comparison_date = "2018-02-06", end_date = Sys.Date(), filter_name=NULL, filter_rank = NULL) {
+comparison_graph = function(comparison_date = "2018-02-06", end_date = Sys.Date()-1, filter_name=NULL, filter_rank = NULL) {
     
     if (comparison_date <= end_date){
         comparison_date1 = comparison_date
@@ -250,15 +250,17 @@ comparison_graph = function(comparison_date = "2018-02-06", end_date = Sys.Date(
 ###############################################################################################
 ###############################################################################################
 
+
 predict_correction = function(ooath.date, ooatl.date,oath.date, oatl.date, ath.date, atl.date = Sys.Date()-1){
-	
-ooath.date = "2018-01-06"
-ooatl.date = "2018-02-05"
-oath.date = "2018-03-04"
-oatl.date = "2018-04-06"
-ath.date = "2018-05-05"
-atl.date = Sys.Date()
-	
+load("models/d.fit1.Rda")
+load("models/d.fit2.Rda")
+load("models/d.fit3.Rda")
+load("models/d.fit4.Rda")
+load("models/d.fit5.Rda")
+load("models/d.fit6.Rda")
+load("models/d.fit7.Rda")
+load("models/d.fit8.Rda")
+load("models/stats_model.Rda")
 	
 ooath.date = as.Date(ooath.date)
 ooatl.date = as.Date(ooatl.date)
@@ -267,8 +269,7 @@ oatl.date = as.Date(oatl.date)
 ath.date = as.Date(ath.date)
 atl.date = as.Date(atl.date)
 
-load("downtrend_model2.Rda")
-btc.df = getCoins(coin="Bitcoin",start_date='20180101') %>% dplyr::rename(price = close) %>% dplyr::select(date,price)
+btc.df = getCoins(coin="Bitcoin",start_date='20171201') %>% dplyr::rename(price = close) %>% dplyr::select(date,price)
 
 pred.df2 = data.frame(ooath.date,ooatl.date,oath.date,oatl.date,ath.date,atl.date)
 
@@ -279,12 +280,13 @@ a4 = btc.df %>% dplyr::rename(oatl.date = date) %>% dplyr::rename(oatl = price)
 a5 = btc.df %>% dplyr::rename(ath.date = date) %>% dplyr::rename(ath = price)
 a6 = btc.df %>% dplyr::rename(atl.date = date) %>% dplyr::rename(atl = price)
 
+
 pred.df = pred.df2 %>%
 	left_join(a1,by="ooath.date") %>% 
 	left_join(a2,by="ooatl.date") %>% 
 	left_join(a3,by="oath.date") %>% 
 	left_join(a4,by="oatl.date") %>% 
-	left_join(a5,by="ath.date") %>% 
+	left_join(a5,by="ath.date") %>%
 	left_join(a6,by="atl.date")
 
 # Create percent change of uptrend/downtrend
@@ -320,26 +322,127 @@ pred.df$reg.ooath.ooatl = abs(regression(start.date = pred.df$ooath.date,end.dat
 pred.df$reg.ooatl.oath = abs(regression(start.date = pred.df$ooatl.date,end.date = pred.df$oath.date,btc.df))
 pred.df$reg.oath.oatl = abs(regression(start.date = pred.df$oath.date,end.date = pred.df$oatl.date,btc.df))
 pred.df$reg.oatl.ath = abs(regression(start.date = pred.df$oatl.date,end.date = pred.df$ath.date,btc.df))
-pred.df$reg.ath.atl = abs(regression(start.date = pred.df$ath.date,end.date = pred.df$atl.date,btc.df))
 pred.df$reg.ooath.oath =  regression(start.date = pred.df$ooath.date,end.date = pred.df$oath.date,btc.df)
 pred.df$reg.oath.ath = regression(start.date = pred.df$oath.date,end.date = pred.df$ath.date,btc.df)
 pred.df$reg.ooatl.oatl = regression(start.date = pred.df$ooatl.date,end.date = pred.df$oatl.date,btc.df)
+pred.df$reg.ath.atl = abs(regression(start.date = pred.df$ath.date,end.date = pred.df$atl.date,btc.df))
+
+log.pred.df = log(abs(pred.df[,c(13:ncol(pred.df))]))
+names(log.pred.df) <- paste0("log.",names(log.pred.df))
+pred.df = cbind(pred.df,log.pred.df)
 
 pred.df$bad.months = bad.months.function(pred.df$ath.date)
-
 
 # Creates factor if ath is less than oath
 pred.df$ath.bull = as.factor(ifelse(pred.df$ath < pred.df$oath, 0,1))
 
 
-fit1_conf_ci = exp(predict(downtrend_model2, pred.df, se.fit=T, type='response',interval = "conf",level=0.68)$fit)
-fit1_conf_ci_low = as.Date(ath.date) + fit1_conf_ci[2] 
-fit1_conf_ci_mean = as.Date(ath.date) + fit1_conf_ci[1]
-fit1_conf_ci_high = as.Date(ath.date) + fit1_conf_ci[3]
 
-print(paste("Downtrend will end somewhere between", format(fit1_conf_ci_low,"%B %d, %Y"), 
-	"and", format(fit1_conf_ci_high,"%B %d, %Y"), "with an expected date of", format(fit1_conf_ci_mean,"%B %d, %Y"),
-	", which is",round(fit1_conf_ci[1]),"days total since the beginning of the downtrend."))
+
+ci = as.data.frame(matrix(nrow = 8, ncol = 3))
+colnames(ci) = c("fit","low","high")
+ci[1,] = exp(predict(d.fit1, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
+ci[2,] = exp(predict(d.fit2, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
+ci[3,]= exp(predict(d.fit3, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
+ci[4,] = exp(predict(d.fit4, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
+ci[5,] = exp(predict(d.fit5, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
+ci[6,] = exp(predict(d.fit6, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
+ci[7,] = exp(predict(d.fit7, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
+ci[8,] = exp(predict(d.fit8, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
+
+
+output = cbind(sapply(ci,round),sapply(stats_model %>% 
+		mutate(adj.r.squared = adj.r.squared*100, pred.r.squared = pred.r.squared*100),round))
+prediction=ci
+
+
+plot1 = ggplot(prediction,aes(x=fit))+
+	geom_density(color="dodgerblue4",fill="dodgerblue2",alpha=0.4)+
+	geom_point(aes(x=fit,     y=0),    size=6,alpha=0.4)+
+	geom_vline(xintercept=mean(prediction$fit),color="red",size=2,linetype="dashed")+
+	geom_vline(xintercept=median(prediction$fit),color="orange",size=2,linetype="dashed")+
+	geom_vline(xintercept=density(prediction$fit)$x[which.max(density(prediction$fit)$y)],color="yellow",size=2,linetype="dashed")+
+	geom_hline(yintercept=0,color="white")+
+	scale_y_continuous("",expand = c(0,0))+
+	scale_x_continuous("# Days Correction Will Last",expand = c(0,0),breaks=seq(0,200,5))+
+	theme_classic()+
+	  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())+
+	geom_text(x = max(prediction$fit) - (max(prediction$fit)-min(prediction$fit))/10, y = max(density(prediction$fit)$y) - (max(density(prediction$fit)$y) - min(density(prediction$fit)$y))/10, 
+		label = paste("Density:",format(as.Date(ath.date) + density(prediction$fit)$x[which.max(density(prediction$fit)$y)], format="%B %d, %Y")   ,   "\n", 
+			"Median:", format(as.Date(ath.date) +median(prediction$fit), format="%B %d, %Y"),     "\n",
+			"Mean:", format(as.Date(ath.date) +mean(prediction$fit), format="%B %d, %Y")))
+
+plot2 = ggplot(prediction)+
+	geom_rect(aes(xmin=low, xmax=high,ymin=0,ymax=1),alpha=0.125,fill="blue",color=NA)+
+	theme_classic()+
+	ylab("")+
+	ylim(0,1)+
+	theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())+
+	scale_x_continuous("# Days Correction Will Last",breaks=seq(0,200,5))
 	
-print(paste0("This downtrend drops about $", round(pred.df$ath*pred.df$reg.ath.atl/100), " per day."))
+table1 = ggtexttable(output, rows = NULL, theme = ttheme("mBlue"))
+
+ggarrange(plot2, table1, 
+          ncol = 1, nrow = 2,
+          heights = c(0.25, 0.75))
+#return(output)
+#return(plot2)
+#print(paste("Downtrend will end somewhere between", format(fit1_conf_ci_low,"%B %d, %Y"), 
+#	"and", format(fit1_conf_ci_high,"%B %d, %Y"), "with an expected date of", format(fit1_conf_ci_mean,"%B %d, %Y"),
+#	", which is",round(fit1_conf_ci[1]),"days total since the beginning of the downtrend."))
 }
+
+
+###############################################################################################
+###############################################################################################
+
+
+cols = brewer.pal(11, "RdBu")   # goes from red to white to blue
+pal = colorRampPalette(cols)
+cor_colors = data.frame(correlation = seq(-1,1,0.01), correlation_color = pal(201)[1:201])  # assigns a color for each r correlation value
+cor_colors$correlation_color = as.character(cor_colors$correlation_color)
+
+panel.cor <- function(x, y, digits=2, cex.cor)
+{
+  par(usr = c(0, 1, 0, 1))
+  u <- par('usr') 
+  names(u) <- c("xleft", "xright", "ybottom", "ytop")
+  r <- cor(x, y,method="spearman",use="complete.obs")
+  test <- cor.test(x,y)
+  bgcolor = cor_colors[2+(-r+1)*100,2]    # converts correlation coefficient into a specific color
+  do.call(rect, c(col = bgcolor, as.list(u))) # colors the correlation box
+  
+  if (test$p.value> 0.05){
+    text(0.5,0.5,"Insignificant",cex=1.5)
+  } else{
+  text(0.5, 0.75, paste("r=",round(r,2)),cex=2) # prints correlatoin coefficient
+  text(.5, .25, paste("p=",formatC(test$p.value, format = "e", digits = 1))   ,cex=2)  # prints p value in scientific notation format
+  abline(h = 0.5, lty = 2) # draws a line between correlatoin coefficient and p value
+  }
+  
+}
+panel.smooth<-function (x, y, col = "black", bg = NA, pch = 19, cex = 1.2, col.smooth = "blue", span = 2/3, iter = 3, ...) {
+  points(x, y, pch = pch, col = col, bg = bg, cex = cex)
+  ok <- is.finite(x) & is.finite(y)
+  if (any(ok)) 
+    lines(stats::lowess(x[ok], y[ok], f = span, iter = iter), lwd=2.5, 
+          col = col.smooth, ...)
+}
+panel.hist <- function(x, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(usr[1:2], 0, 1.5) )
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col="cyan", ...)
+}
+
+#pairs(df[1:16],lower.panel=panel.smooth, upper.panel=panel.cor,diag.panel=panel.hist,cex.labels=2)
+
+
+

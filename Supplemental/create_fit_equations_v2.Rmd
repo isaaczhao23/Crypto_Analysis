@@ -11,126 +11,132 @@ load("bitcoin_history.RDA")  # named df
 Finding a model for predicting when downtrend will end
 ```{r}
 colnames(df)
+variables1 = c("pct.ooath.ooatl",   "pct.ooatl.oath",   "pct.oath.oatl"   , "pct.oatl.ath"  ,    "pct.ooath.oath"      ,    "pct.oath.ath"   ,    "pct.ooatl.oatl"   ,  "days.ooath.ooatl"   ,     "days.ooatl.oath"     ,    "days.oath.oatl"       ,   "days.oatl.ath"     ,    "days.ooath.oath"    ,     "days.oath.ath"        ,  "days.ooatl.oatl"     ,    "pct.day.ooath.ooatl"  ,   "pct.day.ooatl.oath"    ,  "pct.day.oath.oatl"   ,  "pct.day.oatl.ath"  ,"pct.day.ooath.oath"  ,  "pct.day.oath.ath"   ,    
+     "pct.day.ooatl.oatl"  , "reg.ooath.ooatl"   ,      "reg.ooatl.oath"     ,   "reg.oath.oatl"   ,    "reg.oatl.ath"  ,     "reg.ooath.oath"     ,     "reg.oath.ath"    ,        "reg.ooatl.oatl"    ,       "bad.months"    ,          "ath.bull", "days.ath.atl")
+
+log.variables1 = c(paste0("log.",variables1)[-c(29:31)],variables1[29:31] ,"log.days.ath.atl")
 
 
-df2 = na.omit(df)	
-#df2 = df2[-nrow(df2),]
-#hist(df$days.ath.atl,col="blue",breaks=25)
-#fit = lm(I(log(days.ath.atl)) ~ . , df2)
-#step_fit <- stepAIC(fit2, direction="both")
-#step_fit$anova
+df2 = df %>% na.omit() %>% select(variables1,log.reg.ath.atl)
+log.df2 = df %>% na.omit() %>% select(log.variables1,log.reg.ath.atl)
 
+# for no reg.ath.atl, no logs
+pairs(df2[c(1:10,32)],lower.panel=panel.smooth, upper.panel=panel.cor,diag.panel=panel.hist,cex.labels=1)
+pairs(df2[c(11:20,32)],lower.panel=panel.smooth, upper.panel=panel.cor,diag.panel=panel.hist,cex.labels=1) 
+pairs(df2[c(21:31,32)],lower.panel=panel.smooth, upper.panel=panel.cor,diag.panel=panel.hist,cex.labels=1) 
 
+pairs(df2[which(colnames(df2) %in% c("pct.day.oath.ath", "reg.oath.ath", "ath.bull", "atl.bull","days.ath.atl"))    ],lower.panel=panel.smooth, upper.panel=panel.cor,diag.panel=panel.hist,cex.labels=1) 
 
-# doesn't use reg.ath.atl. adj r = 0.667, pred r = 0.535
-d.fit01 = lm(log.days.ath.atl ~ log.days.ooath.ooatl + log.days.ooatl.oath + 
-    I(log.pct.oath.oatl^2) + I(log.pct.oatl.ath^2) + I(log.pct.oath.ath^2) + 
-    I(log.days.ooath.ooatl^2) + I(log.days.ooatl.oath^2) + I(log.days.oatl.ath^2) + 
-    I(log.days.ooath.oath^2) + I(log.reg.ooatl.oath^2) + I(log.pct.oath.oatl^3) + 
-    I(log.pct.oatl.ath^3) + I(log.days.ooatl.oath^3),df2)
+ # for no reg.ath.atl, logs
+pairs(log.df2[c(1:10,33)],lower.panel=panel.smooth, upper.panel=panel.cor,diag.panel=panel.hist,cex.labels=1)
+pairs(log.df2[c(11:20,32)],lower.panel=panel.smooth, upper.panel=panel.cor,diag.panel=panel.hist,cex.labels=1) 
+pairs(log.df2[c(21:31,32)],lower.panel=panel.smooth, upper.panel=panel.cor,diag.panel=panel.hist,cex.labels=1) 
 
-
-# doesn't use reg.ath.atl. adj r = 0.686, pred r = 0.540
-d.fit02 = lm(log.days.ath.atl ~ log.days.ooath.ooatl + log.days.ooatl.oath + 
-    I(log.pct.oath.oatl^2) + I(log.pct.oatl.ath^2) + I(log.pct.oath.ath^2) + 
-    I(log.days.ooath.ooatl^2) + I(log.days.oatl.ath^2) + I(log.days.ooath.oath^2) + 
-    I(log.reg.ooatl.oath^2) + I(log.pct.oath.oatl^3) + I(log.pct.oatl.ath^3) + 
-    log.days.ooath.ooatl:log.days.ooatl.oath + log.days.ooatl.oath:I(log.days.ooath.oath^2),df2)
-
-
-d.fit03 = lm(log.days.ath.atl ~ log.pct.oath.ath + log.days.ooath.ooatl + 
+pairs(log.df2[which(colnames(log.df2) %in% c("log.pct.oath.oatl", "log.pct.oatl.ath", "log.pct.oath.ath", "log.days.ooatl.oath", "log.pct.day.oath.ath", "ath.bull","atl.bull", "log.reg.ath.atl","log.days.ath.atl"))    ],lower.panel=panel.smooth, upper.panel=panel.cor,diag.panel=panel.hist,cex.labels=1) 
+  
+# with no log.reg.ath.atl
+d.fit1 = lm(log.days.ath.atl ~ log.pct.oath.oatl + log.pct.oath.ath , log.df2)
+d.fit2 = lm(log.days.ath.atl ~ log.pct.oatl.ath + log.days.ooath.ooatl + 
     log.days.ooatl.oath + log.days.oath.oatl + log.days.ooath.oath + 
-    log.reg.oath.oatl,df2)
+    log.reg.oath.oatl + log.reg.oath.ath + bad.months,log.df2)
 
-# Everything using aic
-d.fit1 = lm(I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + pct.ooath.oath + 
-    days.ooath.ooatl + days.ooatl.oath + pct.day.oath.oatl + 
-    pct.day.oatl.ath + pct.day.ooath.oath + pct.day.oath.ath + 
-    reg.ooath.ooatl + reg.oath.oatl + reg.ooath.oath + bad.months + 
-    reg.ath.atl + ath.bull,df2)
+# with log.reg.ath.atl
+d.fit3 = lm(log.days.ath.atl ~ log.pct.ooath.oath + log.pct.oath.ath + 
+     log.reg.ooatl.oath + 
+    ath.bull + log.reg.ath.atl + log.pct.ooatl.oatl,log.df2)
 
-# fit2 run in aic
-d.fit2 = lm(I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + pct.ooath.oath + 
-    days.ooath.ooatl + days.ooatl.oath + pct.day.oatl.ath + pct.day.oath.ath + 
-    reg.ooath.oath + bad.months + reg.ath.atl + ath.bull + I(log(pct.ooath.ooatl)) + 
-    I(log(pct.ooatl.oath)) + I(log(abs(pct.ooath.oath))) + I(log(days.ooatl.oath)) + 
-    I(log(pct.day.oath.oatl)) + I(log(abs(pct.day.ooath.oath))) + 
-    I(log(abs(pct.day.oath.ath))) + I(log(reg.ooath.ooatl)) + 
-    I(log(reg.oath.oatl)) + I(log(reg.ath.atl)),df2)
+d.fit4 = lm(log.days.ath.atl ~ log.pct.oatl.ath + log.pct.ooath.oath + 
+    log.pct.oath.ath + log.pct.ooatl.oatl +
+    log.days.oath.oatl + log.days.oatl.ath + log.days.oath.ath + 
+    log.reg.ooatl.oath + log.reg.oatl.ath + ath.bull + log.reg.ath.atl,log.df2)
 
 
-d.fit3 = lm(I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + 
-    pct.ooath.oath + days.ooath.ooatl + days.oatl.ath + pct.day.oatl.ath + 
-    pct.day.oath.ath + reg.oatl.ath + reg.ooath.oath + reg.oath.ath + 
-    bad.months + ath.bull + reg.ath.atl + I(log(pct.ooath.ooatl)) + 
-    I(log(pct.ooatl.oath)) + I(log(abs(pct.ooatl.oatl))) + I(log(days.ooath.ooatl)) + 
-    I(log(days.oatl.ath)) + I(log(reg.oatl.ath)) + I(log(reg.ath.atl)),df2)
+d.fit5 = lm(log.days.ath.atl ~ log.pct.oatl.ath +  log.pct.ooath.oath  +
+    log.pct.oath.ath  + log.pct.ooatl.oatl +
+    log.days.oath.oatl + log.days.oatl.ath + log.days.oath.ath + 
+    log.reg.ooatl.oath + log.reg.oatl.ath +I(log.reg.oatl.ath^2) + ath.bull + log.reg.ath.atl + I(log.reg.ath.atl^2),log.df2)
+
+d.fit6 = lm(log.days.ath.atl ~ log.pct.ooath.oath + log.pct.oath.ath + I(log.pct.ooatl.oatl^2) + ath.bull + log.reg.ath.atl ,log.df2)
 
 
-# Fit4 removing terms
-d.fit4 = lm(I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + pct.ooath.oath + 
-    days.ooath.ooatl + days.ooatl.oath + pct.day.oatl.ath + pct.day.oath.ath + 
-    reg.ooath.oath + bad.months + reg.ath.atl + ath.bull + I(log(pct.ooath.ooatl)) + 
-    I(log(pct.ooatl.oath)) + 
-   I(log(reg.ooath.ooatl)) + 
-     I(log(reg.ath.atl)),df2)
+d.fit7 = lm(log.days.ath.atl ~ log.pct.oatl.ath + log.pct.ooath.oath + 
+    ath.bull + log.reg.ath.atl + I(log.pct.oatl.ath^3) + 
+    I(log.pct.ooath.oath^3) + I(log.pct.oath.ath^3) + I(log.pct.ooatl.oatl^3) + 
+    I(log.days.oath.oatl^3) + I(log.reg.ooatl.oath^3) + 
+    I(log.reg.oatl.ath^3) + I(log.reg.ath.atl^3),log.df2)
 
-d.fit5 = lm(formula = I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + 
-    pct.ooath.oath + days.ooath.ooatl + days.oatl.ath + pct.day.oatl.ath + 
-    pct.day.oath.ath + reg.oatl.ath + reg.ooath.oath + reg.oath.ath + 
-    bad.months + ath.bull + reg.ath.atl + I(log(pct.ooath.ooatl)) + 
-    I(log(pct.ooatl.oath)) + I(log(abs(pct.ooatl.oatl))) + I(log(days.ooath.ooatl)) + 
-    I(log(days.oatl.ath)) + I(log(reg.oatl.ath)) + I(log(reg.ath.atl)) + 
-    pct.ooatl.oath:ath.bull + pct.ooath.oath:ath.bull + pct.day.oath.ath:ath.bull, 
-    data = df2)
+d.fit8 = lm(log.days.ath.atl ~ log.pct.oatl.ath + log.pct.ooath.oath + log.days.oath.oatl + 
+    log.reg.oatl.ath + ath.bull + log.reg.ath.atl + I(log.pct.oatl.ath^3) + 
+    I(log.pct.ooath.oath^3) + I(log.pct.oath.ath^3) + I(log.pct.ooatl.oatl^3) + 
+    I(log.days.oath.oatl^3) + I(log.days.oath.ath^3) + I(log.reg.ooatl.oath^3) + 
+    I(log.reg.oatl.ath^3) + I(log.reg.ath.atl^3),log.df2)
 
 
-d.fit6 = lm(I(log(days.ath.atl)) ~ pct.ooath.ooatl + pct.ooatl.oath + pct.ooath.oath + 
-    days.ooath.ooatl + days.ooatl.oath  +
-    reg.ooath.oath + bad.months + reg.ath.atl + I(log(pct.ooath.ooatl)) + 
-    I(log(pct.ooatl.oath)) + 
-   I(log(reg.ooath.ooatl)) + 
-     I(log(reg.ath.atl)),df2)
-
-# taking out terms from downtrend_model2
-d.fit7 = lm(I(log(days.ath.atl)) ~  
-    days.ooath.ooatl + days.ooatl.oath  +
-    reg.ooath.oath + bad.months + I(log(pct.ooath.ooatl)) + 
-    I(log(pct.ooatl.oath)) + 
-   I(log(reg.ooath.ooatl)) + 
-     I(log(reg.ath.atl)),df2)
-
-d.fit8 = lm(log.days.ath.atl ~ log.pct.ooatl.oath + log.pct.oatl.ath + log.pct.ooath.oath + 
-    log.pct.oath.ath + log.days.oatl.ath + log.reg.ooatl.oath + 
-    log.reg.oatl.ath + log.reg.ath.atl + log.pct.day.ooatl.oatl,df2)
 
 
-summary(downtrend_model3)
-#step_fit <- stepAIC(fit3, direction="both")
-#step_fit$anova
+fit.all = lm(log.days.ath.atl ~  log.pct.ooath.ooatl   +  log.pct.ooatl.oath    +  log.pct.oath.oatl    +   log.pct.oatl.ath  
++log.pct.ooath.oath  +    log.pct.oath.ath    +    log.pct.ooatl.oatl  +    log.days.ooath.ooatl   
++ log.days.ooatl.oath +    log.days.oath.oatl  +    log.days.oatl.ath   +    log.days.ooath.oath    
++log.days.oath.ath     +  log.days.ooatl.oatl   +  log.pct.day.ooath.ooatl+ log.pct.day.ooatl.oath 
++log.pct.day.oath.oatl  + log.pct.day.oatl.ath   + log.pct.day.ooath.oath  +log.pct.day.oath.ath  
++log.pct.day.ooatl.oatl  +log.reg.ooath.ooatl    + log.reg.ooatl.oath     + log.reg.oath.oatl      
++log.reg.oatl.ath       + log.reg.ooath.oath     + log.reg.oath.ath       + log.reg.ooatl.oatl     
++bad.months             + ath.bull + log.reg.ath.atl,log.df2   )
+
+fit.all2 = lm(log.days.ath.atl ~ log.pct.oatl.ath + log.pct.ooath.oath + 
+    log.pct.oath.ath + log.pct.ooatl.oatl +
+    log.days.oath.oatl + log.days.oatl.ath + log.days.oath.ath + 
+    log.reg.ooatl.oath + log.reg.oatl.ath + ath.bull + log.reg.ath.atl+
+	I(log.pct.oatl.ath^3) + I(log.pct.ooath.oath^3) + 
+    I(log.pct.oath.ath^3) + I(log.pct.ooatl.oatl^3) +
+    I(log.days.oath.oatl^3) + I(log.days.oatl.ath^3) + I(log.days.oath.ath^3) + 
+    I(log.reg.ooatl.oath^3) + I(log.reg.oatl.ath^3) +  I(log.reg.ath.atl^3)	
+		
+		,log.df2)
+
+step_fit <- stepAIC(fit.all2, direction="both")
+step_fit$anova
 stepwise(downtrend_model3, direction = "backward/forward", criterion = "BIC")
 # Compare models
-ldply(list(fit1, fit2,fit3,fit4,fit5,fit6,fit7), model_fit_stats)
-
-
-
-
-
-
+stats1 = as.data.frame(ldply(list(d.fit1,d.fit2,d.fit3,d.fit4,d.fit5,d.fit6,d.fit7,d.fit8), model_fit_stats)[,2:3])
+stats1
 
 # comparing predicted to actual difference
-df.predicted.diff = cbind(data.frame(observed = df2[,"days.ath.atl"]),as.data.frame(exp(predict(fit, df2, se.fit=T, type='response',interval = "conf",level=0.68)$fit))) %>% arrange(fit)  %>%
-	mutate(diff = fit-observed) %>% mutate(diff.L = lwr - observed) %>% mutate(diff.U = upr - observed) %>% mutate(abs_diff = abs(diff))
+df.predicted.diff = cbind(data.frame(observed = exp(log.df2$log.days.ath.atl)),as.data.frame(exp(predict(d.fit4, log.df2, se.fit=T, type='response',interval = "conf",level=0.8)$fit))) %>% arrange(fit)  %>%
+	mutate(diff = fit-observed, diff.L = lwr - observed, diff.U = upr - observed, abs_diff = abs(diff))
+
+stats2.function = function(model){
+df.predicted.diff = cbind(data.frame(observed = exp(log.df2$log.days.ath.atl)),as.data.frame(exp(predict(model, log.df2, se.fit=T, type='response',interval = "conf",level=0.8)$fit))) %>% arrange(fit)  %>%
+	mutate(diff = fit-observed,abs_diff = abs(diff)) %>% 
+	summarize(sum_squared_error = sum(diff^2),
+		mean_error = mean(abs_diff),
+		median_error = median(abs_diff)
+		)
+return(df.predicted.diff)
+}
+
+stats2 = as.data.frame(matrix(nrow = 8, ncol = 3))
+colnames(stats2) = c("sum_squared_error","mean_error","median_error")
+stats2[1,] = stats2.function(model=d.fit1)
+stats2[2,] = stats2.function(model=d.fit2)
+stats2[3,] = stats2.function(model=d.fit3)
+stats2[4,] = stats2.function(model=d.fit4)
+stats2[5,] = stats2.function(model=d.fit5)
+stats2[6,] = stats2.function(model=d.fit6)
+stats2[7,] = stats2.function(model=d.fit7)
+stats2[8,] = stats2.function(model=d.fit8)
+
+stats_model = cbind(stats1,stats2)
 
 ggplot(df.predicted.diff, aes(x = fit, y = diff)) +
     geom_point(size = 3,color="blue",alpha=0.7) +
 	geom_hline(aes(yintercept=0),color="springgreen4",linetype="dashed") +
-	geom_hline(aes(yintercept=0),color="springgreen3",alpha=0.25,size=20) +
-	geom_hline(aes(yintercept=5),color="springgreen4",linetype="dotted") +
-	geom_hline(aes(yintercept=-5),color="springgreen4",linetype="dotted") +
+	geom_hline(aes(yintercept=0),color="springgreen3",alpha=0.25,size=1) +
+	#geom_hline(aes(yintercept=5),color="springgreen4",linetype="dotted") +
+	#geom_hline(aes(yintercept=-5),color="springgreen4",linetype="dotted") +
 	#geom_vline(aes(xintercept=30),color="springgreen4",linetype="dotted") +
-    geom_errorbar(aes(ymax = diff.U, ymin = diff.L),color="red",alpha=0.5, width=1) +
-	scale_x_continuous(name="Predicted Number of Days Downtrend Will Last", breaks=seq(0,100,5))+
+    geom_errorbar(aes(ymax = diff.U, ymin = diff.L),color="red",alpha=0.5, width=0.2) +
+	scale_x_continuous(name="Predicted Number of Days Downtrend Will Last", breaks=seq(0,100,5)) +
 	scale_y_continuous(name="Difference in Days Between Prediction and Actual Downtrend Duration (Prediction - Actual)",breaks=seq(-100,100,5))+
     theme_economist() + scale_colour_economist() +
 	ggtitle("Error of Linear Model Predicting BTC Downtrend Duration") 
@@ -154,19 +160,9 @@ ggplot(df.predicted.diff, aes(x = fit, y = abs_diff)) +
 	ggtitle("Error of Linear Model Predicting BTC Downtrend Duration")
 
 
-# Average difference when prediction is less than a month is 3 days
-df.predicted.diff %>% filter(fit > 5 & fit <= 30) %>%  dplyr::select(abs_diff) %>% colMeans()
-# Average difference when predictino is between 1 to 2 months is 7 days
-df.predicted.diff %>% filter(fit > 30 & fit <= 60) %>% dplyr::select(abs_diff) %>% colMeans()
-# Average difference when predictino is more than 2 months is 2 days
-df.predicted.diff %>% filter(fit > 60) %>% dplyr::select(abs_diff) %>% colMeans()
-
 
 sjt.lm(downtrend_model2)
 
-save(d.fit01,file="models/d.fit01.Rda")
-save(d.fit02,file="models/d.fit02.Rda")
-save(d.fit03,file="models/d.fit03.Rda")
 save(d.fit1,file="models/d.fit1.Rda")
 save(d.fit2,file="models/d.fit2.Rda")
 save(d.fit3,file="models/d.fit3.Rda")
@@ -175,6 +171,8 @@ save(d.fit5,file="models/d.fit5.Rda")
 save(d.fit6,file="models/d.fit6.Rda")
 save(d.fit7,file="models/d.fit7.Rda")
 save(d.fit8,file="models/d.fit8.Rda")
+save(stats_model,file="models/stats_model.Rda")
+
 
 
 
