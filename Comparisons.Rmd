@@ -1,0 +1,69 @@
+
+Load essentials.
+```{r}
+setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
+source("custom_functions.R")
+today = Sys.Date()-1
+```
+
+
+#### How to use comparison_chart function####
+comparison_date:
+    The specific reference date that you want for all other dates to compare to. "YYYY-MM-DD" format. 
+    Use today to refer to today's date.
+    
+end_date:
+    The furthest date in the time interval you want to compare with. "YYYY-MM-DD" format. 
+    [DEFAULT]: today's date.
+
+month_or_day:
+    "day" = [DEFAULT] Looks at all the days between the start date and end date.
+    "month" = Looks at all the months between the start date and end date
+
+interval:
+    Takes a number as the argument. The interval number of months or days the start to end date is divided by. 
+    [DEFAULT] value is 1.
+
+type:
+    "marketcap" = [DEFAULT] sorts dataset by marketcap (descending).
+    "percent" = sorts each column of dataset by the coin with the highest gain since that month.
+    "name" = sorts dataset by coin name.
+    "nopercent" = sorts dataset by marketcap (descending) without percent or name labels.
+
+```{r}
+comparison_chart(comparison_date="2017-01-01", month_or_day="month", interval=1, type="percent", topranks=50)
+```
+
+
+#################################################################################
+
+#### How to use generate_comparison function####
+comparison_date:
+    The specific reference date that you want for all other dates to compare to. "YYYY-MM-DD" format. 
+    Use today to refer to today's date.
+    
+end_date:
+    The furthest date in the time interval you want to compare with. "YYYY-MM-DD" format. 
+    [DEFAULT]: today's date.
+
+filter_name: 
+	Compare by selected coin names.
+	Format: c("Bitcoin", "Ethereum") selects Bitcoin and Etereum.
+
+filter_rank: 
+	Compare by marketcap rank instead of name. 
+	Format: c(1:5) selects top 5 coins in marketcap.
+
+Creates comparison graph of price changes in USD by selected name.
+```{r}
+comparison_graph(comparison_date="2018-03-06", filter_name = c("Bitcoin","Nano","TRON","Ripple","Verge","Binance Coin","Stellar","Cardano","VeChain"))
+```
+
+
+# Creates comparison graph of top 5 marketcap rank coins
+```{r}
+comparison_graph(comparison_date="2017-01-01", filter_rank = c(1:5))
+```
+
+
+

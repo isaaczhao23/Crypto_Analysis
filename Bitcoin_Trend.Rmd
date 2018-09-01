@@ -1,0 +1,56 @@
+
+```{r}
+setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
+source("custom_functions.R")
+load("bitcoin_history_all.RDA")
+btc.df.new = getCoins(coin="Bitcoin",start_date='20180812') %>% dplyr::rename(price = close) %>% dplyr::select(date,price)
+btc.df = btc.df  %>% bind_rows(btc.df.new)
+```
+
+
+```{r}
+btc.df1 = btc.df %>% filter(date >= as.Date("2017-12-10")) 
+ggplot(btc.df1, aes(x=date,y=price)) + 
+	#geom_point(color="darkslategray3",size=2)+
+	geom_line(color="darkslategray3")+
+	theme_dark()+
+	geom_smooth(se=FALSE,span=0.99,color="green",size=2,alpha=0.3)+
+    geom_smooth(se=FALSE,span=0.2,color="darkblue",size=2,alpha=0.3)+
+	scale_y_continuous("",breaks=seq(0,25000,1000))+
+	scale_x_date(date_breaks = "1 month", date_labels =  "%b") +   # %b %Y to have month and year
+	xlab("")
+```
+
+
+```{r}
+btc.df2 = btc.df %>% filter(date >= as.Date("2013-11-28") & date <= as.Date("2017-01-06"))
+
+ggplot(btc.df2, aes(x=date,y=price)) + 
+	geom_line(color="darkslategray3")+
+	theme_dark() +
+	geom_smooth(method='loess',se=FALSE,span=0.99,color="green",size=2,alpha=0.3)+
+    geom_smooth(method='loess',se=FALSE,span=0.1,color="darkblue",size=2,alpha=0.3)+
+	scale_y_continuous("",breaks=seq(100,1500,100))+
+	geom_vline(xintercept = as.Date("2015-05-15"),color="red",size=2)+
+	scale_x_date(date_breaks = "1 month", date_labels =  "%b") +
+	xlab("")
+	
+
+
+```
+
+```{r}
+a = getCoins("Nano")
+b = a %>% filter(date>= as.Date("2017-12-30"))
+
+ggplot(b, aes(x=date,y=high)) + 
+	geom_line(color="darkslategray3")+
+	theme_dark() +
+	geom_smooth(method='loess',se=FALSE,span=0.99,color="green",size=2,alpha=0.3)+
+    geom_smooth(method='loess',se=FALSE,span=0.1,color="darkblue",size=2,alpha=0.3)+
+	scale_y_continuous("",breaks=seq(0,50,0.5))+
+	geom_vline(xintercept = as.Date("2015-05-15"),color="red",size=2)+
+	scale_x_date(date_breaks = "1 month", date_labels =  "%b") +
+	xlab("")
+```
+

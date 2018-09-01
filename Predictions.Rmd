@@ -1,0 +1,75 @@
+
+Load essentials.
+```{r}
+setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
+source("custom_functions.R")
+today = Sys.Date()-1
+```
+
+Predict when downtrend will end
+
+ooath.date = date that second last downtrend started
+ooatl.date = date that second last downtrend ended
+oath.date = date that last downtrend started
+oatl.date = date that last downtrend ended
+ath.date = date that current downtrend started
+atl.date = date of lowest price (or today's date)
+```{r}
+predict_downtrend(
+ooath.date = "2018-03-04",
+ooatl.date = "2018-04-06",
+oath.date = "2018-05-05",
+oatl.date = "2018-06-28",
+ath.date = "2018-07-28",
+atl.date="2018-08-15"
+)
+```
+
+Predict when uptrend will end
+
+ooath.date = date that third last downtrend started
+ooatl.date = date that third last downtrend ended
+oath.date = date that second downtrend started
+oatl.date = date that second last downtrend ended
+ath.date = date that last downtrend started
+atl.date = date that last downtrend ended
+
+
+```{r}
+predict_uptrend(
+ooath.date = "2018-01-07",
+ooatl.date = "2018-01-17",
+oath.date="2018-01-20",
+oatl.date = "2018-02-06",
+ath.date = "2018-03-04",
+atl.date = "2018-04-06",
+nath.date = "2018-04-20"
+)
+```
+
+
+```{r}
+predict_uptrend(
+ooath.date="2018-01-18",
+ooatl.date = "2018-02-06",
+oath.date = "2018-03-04",
+oatl.date = "2018-04-06",
+ath.date = "2018-05-05",
+atl.date = "2018-06-28",
+nath.date = "2018-07-17"
+)
+```
+
+
+```{r}
+predict_uptrend(
+ooath.date = "2018-03-04",
+ooatl.date = "2018-04-06",
+oath.date = "2018-05-05",
+oatl.date = "2018-06-28",
+ath.date = "2018-07-28",
+atl.date="2018-08-15",
+	ci.level=0.975
+)
+```
+
