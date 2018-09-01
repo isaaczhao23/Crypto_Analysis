@@ -1,5 +1,9 @@
 source("check_packages.R")
-check_packages(c("ggpubr","RColorBrewer","MASS","plyr","RcmdrMisc", "tidyverse", "tidyr","scales", "crypto", "ggthemes", "directlabels", "shiny","ggpubr", "ggrepel","readxl","gridExtra","sjPlot","lubridate","dplyr","ggplot2"))
+check_packages(c("ggpubr","RColorBrewer","MASS","plyr","RcmdrMisc", "tidyverse", "tidyr","scales", "crypto", "directlabels", "shiny","ggpubr", "ggrepel","readxl","gridExtra","sjPlot","lubridate","dplyr","ggplot2"))
+select <- dplyr::select
+rename <- dplyr::rename
+mutate <- dplyr::mutate
+summarize <- dplyr::summarize
 
 ###############################################################################################
 ###############################################################################################
@@ -251,7 +255,8 @@ comparison_graph = function(comparison_date = "2018-02-06", end_date = Sys.Date(
 ###############################################################################################
 
 
-predict_correction = function(ooath.date, ooatl.date,oath.date, oatl.date, ath.date, atl.date = Sys.Date()-1){
+predict_downtrend = function(ooath.date, ooatl.date,oath.date, oatl.date, ath.date, atl.date=Sys.Date()-1, ci.level = 0.95){
+load("bitcoin_history_all.RDA")  #btc.df
 load("models/d.fit1.Rda")
 load("models/d.fit2.Rda")
 load("models/d.fit3.Rda")
@@ -260,7 +265,6 @@ load("models/d.fit5.Rda")
 load("models/d.fit6.Rda")
 load("models/d.fit7.Rda")
 load("models/d.fit8.Rda")
-load("models/stats_model.Rda")
 	
 ooath.date = as.Date(ooath.date)
 ooatl.date = as.Date(ooatl.date)
@@ -269,18 +273,15 @@ oatl.date = as.Date(oatl.date)
 ath.date = as.Date(ath.date)
 atl.date = as.Date(atl.date)
 
-btc.df = getCoins(coin="Bitcoin",start_date='20171201') %>% dplyr::rename(price = close) %>% dplyr::select(date,price)
-
+btc.df.new = getCoins(coin="Bitcoin",start_date='20180812') %>% dplyr::rename(price = close) %>% dplyr::select(date,price)
+btc.df = btc.df %>% filter(date >= as.Date("2017-12-01")) %>% bind_rows(btc.df.new)
 pred.df2 = data.frame(ooath.date,ooatl.date,oath.date,oatl.date,ath.date,atl.date)
-
 a1 = btc.df %>% dplyr::rename(ooath.date = date) %>% dplyr::rename(ooath = price)
 a2 = btc.df %>% dplyr::rename(ooatl.date = date) %>% dplyr::rename(ooatl = price)
 a3 = btc.df %>% dplyr::rename(oath.date = date) %>% dplyr::rename(oath = price)
 a4 = btc.df %>% dplyr::rename(oatl.date = date) %>% dplyr::rename(oatl = price)
 a5 = btc.df %>% dplyr::rename(ath.date = date) %>% dplyr::rename(ath = price)
 a6 = btc.df %>% dplyr::rename(atl.date = date) %>% dplyr::rename(atl = price)
-
-
 pred.df = pred.df2 %>%
 	left_join(a1,by="ooath.date") %>% 
 	left_join(a2,by="ooatl.date") %>% 
@@ -316,7 +317,6 @@ pred.df$pct.day.ooath.oath = pred.df$pct.ooath.oath/pred.df$days.ooath.oath
 pred.df$pct.day.oath.ath = pred.df$pct.oath.ath/pred.df$days.oath.ath
 pred.df$pct.day.ooatl.oatl = pred.df$pct.ooatl.oatl/pred.df$days.ooatl.oatl
 
-
 # Create regression
 pred.df$reg.ooath.ooatl = abs(regression(start.date = pred.df$ooath.date,end.date = pred.df$ooatl.date, btc.df))
 pred.df$reg.ooatl.oath = abs(regression(start.date = pred.df$ooatl.date,end.date = pred.df$oath.date,btc.df))
@@ -338,69 +338,184 @@ pred.df$ath.bull = as.factor(ifelse(pred.df$ath < pred.df$oath, 0,1))
 
 
 
-
 ci = as.data.frame(matrix(nrow = 8, ncol = 3))
 colnames(ci) = c("fit","low","high")
-ci[1,] = exp(predict(d.fit1, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
-ci[2,] = exp(predict(d.fit2, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
-ci[3,]= exp(predict(d.fit3, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
-ci[4,] = exp(predict(d.fit4, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
-ci[5,] = exp(predict(d.fit5, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
-ci[6,] = exp(predict(d.fit6, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
-ci[7,] = exp(predict(d.fit7, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
-ci[8,] = exp(predict(d.fit8, pred.df, se.fit=T, type='response',interval = "conf",level=0.9)$fit)
+ci[1,] = exp(predict(d.fit1, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit)
+ci[2,] = exp(predict(d.fit2, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit)
+ci[3,]= exp(predict(d.fit3, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit)
+ci[4,] = exp(predict(d.fit4, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit)
+ci[5,] = exp(predict(d.fit5, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit)
+ci[6,] = exp(predict(d.fit6, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit)
+ci[7,] = exp(predict(d.fit7, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit)
+ci[8,] = exp(predict(d.fit8, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit)
+
+# ci = ci %>% mutate(date.fit = format(ath.date+fit,"%B %d") , 
+# 	date.low = format(ath.date+low,"%B %d"), 
+# 	date.high = format(ath.date+high,"%B %d")) 
+
+# output = cbind(ci%>%
+# 		select(date.fit,date.low,date.high),
+# 	sapply(d.stats.model %>% 
+# 		mutate(adj.r.squared = adj.r.squared*100, pred.r.squared = pred.r.squared*100),round)) %>%
+# 	rename('Prediction' = date.fit ) %>%
+# 	mutate('95% Confidence Interval' = paste0("(",date.low,", ",date.high,")")) %>%
+# 	rename('Adjusted R2' = adj.r.squared, 'Predicted R2' = pred.r.squared, 'Average Error' = mean_error, 'Median Error' = median_error) %>%
+# 	select(-date.low,-date.high) %>%
+# 	select(1,7,2,3,4,5,6)
 
 
-output = cbind(sapply(ci,round),sapply(stats_model %>% 
-		mutate(adj.r.squared = adj.r.squared*100, pred.r.squared = pred.r.squared*100),round))
-prediction=ci
-
-
-plot1 = ggplot(prediction,aes(x=fit))+
-	geom_density(color="dodgerblue4",fill="dodgerblue2",alpha=0.4)+
-	geom_point(aes(x=fit,     y=0),    size=6,alpha=0.4)+
-	geom_vline(xintercept=mean(prediction$fit),color="red",size=2,linetype="dashed")+
-	geom_vline(xintercept=median(prediction$fit),color="orange",size=2,linetype="dashed")+
-	geom_vline(xintercept=density(prediction$fit)$x[which.max(density(prediction$fit)$y)],color="yellow",size=2,linetype="dashed")+
-	geom_hline(yintercept=0,color="white")+
-	scale_y_continuous("",expand = c(0,0))+
-	scale_x_continuous("# Days Correction Will Last",expand = c(0,0),breaks=seq(0,200,5))+
-	theme_classic()+
-	  theme(axis.title.y=element_blank(),
-        axis.text.y=element_blank(),
-        axis.ticks.y=element_blank())+
-	geom_text(x = max(prediction$fit) - (max(prediction$fit)-min(prediction$fit))/10, y = max(density(prediction$fit)$y) - (max(density(prediction$fit)$y) - min(density(prediction$fit)$y))/10, 
-		label = paste("Density:",format(as.Date(ath.date) + density(prediction$fit)$x[which.max(density(prediction$fit)$y)], format="%B %d, %Y")   ,   "\n", 
-			"Median:", format(as.Date(ath.date) +median(prediction$fit), format="%B %d, %Y"),     "\n",
-			"Mean:", format(as.Date(ath.date) +mean(prediction$fit), format="%B %d, %Y")))
-
-plot2 = ggplot(prediction)+
-	geom_rect(aes(xmin=low, xmax=high,ymin=0,ymax=1),alpha=0.125,fill="blue",color=NA)+
+    ggplot(ci)+
+	geom_rect(aes(xmin=low, xmax=high,ymin=0,ymax=0.5),alpha=0.15,fill="blue",color=NA)+
 	theme_classic()+
 	ylab("")+
 	ylim(0,1)+
 	theme(axis.title.y=element_blank(),
         axis.text.y=element_blank(),
         axis.ticks.y=element_blank())+
-	scale_x_continuous("# Days Correction Will Last",breaks=seq(0,200,5))
-	
-table1 = ggtexttable(output, rows = NULL, theme = ttheme("mBlue"))
+	scale_x_continuous("Date that downtrend is expected to end (darkest region = highest probability)",breaks=round(seq(min(ci$low), max(ci$high),length.out=20)) ,
+		labels = format(round(seq(min(ci$low), max(ci$high),length.out=20)) + ath.date, "%B %d"))+
+        theme(axis.text.x = element_text(angle = 60, hjust = 1,size=12.5,face="bold"))
 
-ggarrange(plot2, table1, 
-          ncol = 1, nrow = 2,
-          heights = c(0.25, 0.75))
-#return(output)
-#return(plot2)
-#print(paste("Downtrend will end somewhere between", format(fit1_conf_ci_low,"%B %d, %Y"), 
-#	"and", format(fit1_conf_ci_high,"%B %d, %Y"), "with an expected date of", format(fit1_conf_ci_mean,"%B %d, %Y"),
-#	", which is",round(fit1_conf_ci[1]),"days total since the beginning of the downtrend."))
+    #table1 = ggtexttable(output, rows = NULL, theme = ttheme("mBlue"))
+    
+ #ggarrange(plot1, table1, ncol = 1, nrow = 2,heights = c(0.5, 0.5))
+
+
 }
 
 
 ###############################################################################################
 ###############################################################################################
 
+predict_uptrend = function(ooath.date, ooatl.date,oath.date, oatl.date, ath.date, atl.date, nath.date=Sys.Date()-1, ci.level = 0.95){
+load("bitcoin_history_all.RDA")  #btc.df
+load("models/u.fit1.Rda")
+load("models/u.fit2.Rda")
+load("models/u.fit3.Rda")
+load("models/u.fit4.Rda")
+load("models/u.fit5.Rda")
+load("models/u.fit6.Rda")
+load("models/u.fit7.Rda")
+load("models/u.fit8.Rda")
+load("models/u.fit9.Rda")
+#load("models/u.fit10.Rda")
+	
+ooath.date = as.Date(ooath.date)
+ooatl.date = as.Date(ooatl.date)
+oath.date = as.Date(oath.date)
+oatl.date = as.Date(oatl.date)
+ath.date = as.Date(ath.date)
+atl.date = as.Date(atl.date)
+nath.date=as.Date(nath.date)
 
+btc.df.new = getCoins(coin="Bitcoin",start_date='20180812') %>% dplyr::rename(price = close) %>% dplyr::select(date,price)
+btc.df = btc.df %>% filter(date >= as.Date("2017-12-01")) %>% bind_rows(btc.df.new)
+pred.df2 = data.frame(ooath.date,ooatl.date,oath.date,oatl.date,ath.date,atl.date,nath.date)
+a1 = btc.df %>% dplyr::rename(ooath.date = date) %>% dplyr::rename(ooath = price)
+a2 = btc.df %>% dplyr::rename(ooatl.date = date) %>% dplyr::rename(ooatl = price)
+a3 = btc.df %>% dplyr::rename(oath.date = date) %>% dplyr::rename(oath = price)
+a4 = btc.df %>% dplyr::rename(oatl.date = date) %>% dplyr::rename(oatl = price)
+a5 = btc.df %>% dplyr::rename(ath.date = date) %>% dplyr::rename(ath = price)
+a6 = btc.df %>% dplyr::rename(atl.date = date) %>% dplyr::rename(atl = price)
+a7 = btc.df %>%dplyr::rename(nath.date = date) %>% dplyr::rename(nath = price)
+pred.df = pred.df2 %>%
+	left_join(a1,by="ooath.date") %>% 
+	left_join(a2,by="ooatl.date") %>% 
+	left_join(a3,by="oath.date") %>% 
+	left_join(a4,by="oatl.date") %>% 
+	left_join(a5,by="ath.date") %>%
+	left_join(a6,by="atl.date") %>%
+	left_join(a7,by="nath.date") %>%
+	filter(row_number()==1)
+
+
+# Create percent change of uptrend/downtrend
+pred.df$pct.ooath.ooatl = (pred.df$ooath - pred.df$ooatl)/pred.df$ooath * 100
+pred.df$pct.ooatl.oath = (pred.df$oath - pred.df$ooatl)/pred.df$ooatl * 100
+pred.df$pct.oath.oatl = (pred.df$oath - pred.df$oatl)/pred.df$oath * 100
+pred.df$pct.oatl.ath = (pred.df$ath - pred.df$oatl)/pred.df$oatl * 100
+pred.df$pct.ooath.oath = (pred.df$oath - pred.df$ooath)/pred.df$ooath * 100
+pred.df$pct.oath.ath = (pred.df$ath - pred.df$oath)/pred.df$oath * 100
+pred.df$pct.ooatl.oatl = (pred.df$oatl - pred.df$ooatl)/pred.df$ooatl * 100
+pred.df$pct.ath.atl = (pred.df$ath - pred.df$atl)/pred.df$ath * 100
+pred.df$pct.ath.nath = (pred.df$nath - pred.df$ath)/pred.df$ath * 100
+pred.df$pct.oatl.atl = (pred.df$atl - pred.df$oatl)/pred.df$oatl * 100
+
+# Create duration of days
+pred.df$days.ooath.ooatl = as.numeric(pred.df$ooatl.date - pred.df$ooath.date)
+pred.df$days.ooatl.oath = as.numeric(pred.df$oath.date - pred.df$ooatl.date)
+pred.df$days.oath.oatl = as.numeric(pred.df$oatl.date - pred.df$oath.date)
+pred.df$days.oatl.ath = as.numeric(pred.df$ath.date - pred.df$oatl.date)
+pred.df$days.ooath.oath = as.numeric(pred.df$oath.date - pred.df$ooath.date)
+pred.df$days.oath.ath = as.numeric(pred.df$ath.date - pred.df$oath.date)
+pred.df$days.ooatl.oatl = as.numeric(pred.df$oatl.date - pred.df$ooatl.date)
+pred.df$days.ath.atl = as.numeric(pred.df$atl.date - pred.df$ath.date)
+pred.df$days.oatl.atl = as.numeric(pred.df$atl.date - pred.df$oatl.date)
+
+# Create percent per day
+pred.df$pct.day.ooath.ooatl = pred.df$pct.ooath.ooatl/pred.df$days.ooath.ooatl
+pred.df$pct.day.ooatl.oath = pred.df$pct.ooatl.oath/pred.df$days.ooatl.oath
+pred.df$pct.day.oath.oatl = pred.df$pct.oath.oatl/pred.df$days.oath.oatl
+pred.df$pct.day.oatl.ath = pred.df$pct.oatl.ath/pred.df$days.oatl.ath
+pred.df$pct.day.ooath.oath = pred.df$pct.ooath.oath/pred.df$days.ooath.oath
+pred.df$pct.day.oath.ath = pred.df$pct.oath.ath/pred.df$days.oath.ath
+pred.df$pct.day.ooatl.oatl = pred.df$pct.ooatl.oatl/pred.df$days.ooatl.oatl
+pred.df$pct.day.ath.atl = pred.df$pct.ath.atl/pred.df$days.ath.atl
+pred.df$pct.day.oatl.atl = pred.df$pct.oatl.atl/pred.df$days.oatl.atl
+
+# Create regression
+pred.df$reg.ooath.ooatl = abs(regression(start.date = pred.df$ooath.date,end.date = pred.df$ooatl.date, btc.df))
+pred.df$reg.ooatl.oath = abs(regression(start.date = pred.df$ooatl.date,end.date = pred.df$oath.date,btc.df))
+pred.df$reg.oath.oatl = abs(regression(start.date = pred.df$oath.date,end.date = pred.df$oatl.date,btc.df))
+pred.df$reg.oatl.ath = abs(regression(start.date = pred.df$oatl.date,end.date = pred.df$ath.date,btc.df))
+pred.df$reg.ooath.oath =  regression(start.date = pred.df$ooath.date,end.date = pred.df$oath.date,btc.df)
+pred.df$reg.oath.ath = regression(start.date = pred.df$oath.date,end.date = pred.df$ath.date,btc.df)
+pred.df$reg.ooatl.oatl = regression(start.date = pred.df$ooatl.date,end.date = pred.df$oatl.date,btc.df)
+pred.df$reg.ath.atl = abs(regression(start.date = pred.df$ath.date,end.date = pred.df$atl.date,btc.df))
+pred.df$reg.oatl.atl = regression(start.date = pred.df$oatl.date,end.date = pred.df$atl.date,btc.df)
+pred.df$reg.atl.nath =  abs(regression(start.date = pred.df$atl.date,end.date = pred.df$nath.date,btc.df))
+
+log.pred.df = log(abs(pred.df[,c(15:ncol(pred.df))]))
+names(log.pred.df) <- paste0("log.",names(log.pred.df))
+pred.df = cbind(pred.df,log.pred.df)
+
+pred.df$bad.months = bad.months.function(pred.df$ath.date)
+
+# Creates factor if ath is less than oath
+pred.df$ath.bull = as.factor(ifelse(pred.df$ath < pred.df$oath, 0,1))
+pred.df$atl.bull = as.factor(ifelse(pred.df$atl < pred.df$oatl, 0,1))
+
+
+ci = as.data.frame(matrix(nrow = 8, ncol = 3))
+colnames(ci) = c("fit","low","high")
+ci[1,] = predict(u.fit1, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit
+ci[2,] = predict(u.fit2, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit
+ci[3,]= predict(u.fit3, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit
+ci[4,] = predict(u.fit4, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit
+ci[5,] = predict(u.fit5, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit
+ci[6,] = exp(predict(u.fit6, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit)
+ci[7,] = exp(predict(u.fit7, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit)
+ci[8,] = exp(predict(u.fit8, pred.df, se.fit=T, type='response',interval = "conf",level=ci.level)$fit)
+#ci[9,] = predict(u.fit9, pred.df, se.fit=T, type='response',interval = "conf",level=0.95)$fit
+#ci[10,] = predict(u.fit10, pred.df, se.fit=T, type='response',interval = "conf",level=0.95)$fit
+
+
+    ggplot(ci)+
+	geom_rect(aes(xmin=low, xmax=high,ymin=0,ymax=0.5),alpha=0.15,fill="red",color=NA)+
+	theme_classic()+
+	ylab("")+
+	ylim(0,1)+
+	theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())+
+	scale_x_continuous("Date that uptrend is expected to end (darkest region = highest probability)",breaks=round(seq(min(ci$low), max(ci$high),length.out=20)) ,
+		labels = format(round(seq(min(ci$low), max(ci$high),length.out=20)) + atl.date, "%B %d"))+
+        theme(axis.text.x = element_text(angle = 60, hjust = 1,size=12.5,face="bold"))
+}
+
+
+###############################################################################################
+###############################################################################################
 cols = brewer.pal(11, "RdBu")   # goes from red to white to blue
 pal = colorRampPalette(cols)
 cor_colors = data.frame(correlation = seq(-1,1,0.01), correlation_color = pal(201)[1:201])  # assigns a color for each r correlation value

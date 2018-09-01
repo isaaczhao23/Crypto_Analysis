@@ -35,8 +35,8 @@ df$nath = c(df$ath[-1],NA)
 df$natl = c(df$atl[-1],NA)
 
 # Manually enter missing nath info
-df[df$ath.date == as.Date("2018-03-04"), "nath"] = 10000
-df[df$ath.date == as.Date("2018-03-04"), "nath.date"] = as.Date("2018-05-05")
+# df[df$ath.date == as.Date("2018-03-04"), "nath"] = 10000
+# df[df$ath.date == as.Date("2018-03-04"), "nath.date"] = as.Date("2018-05-05")
 
 # Create percent change of uptrend/downtrend
 df$pct.ooath.ooatl = (df$ooath - df$ooatl)/df$ooath * 100
@@ -117,6 +117,6 @@ names(log.df) <- paste0("log.",names(log.df))
 df = cbind(df,log.df)
 
 
-save(df,file="bitcoin_history.RDA")
+save(df,file="bitcoin_downtrend_history.RDA")
 ```
 
