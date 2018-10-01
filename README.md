@@ -5,11 +5,9 @@
  4) You may have to change the directory format if you are on a PC instead of a mac for line 4: setwd(.....)
 
 # Current things this analysis can do:
- ### 1) Compare percent change of multiple coins on the same graph/table. (Comparisons.Rmd)
- ![screen shot 2018-09-01 at 1 29 05 pm](https://user-images.githubusercontent.com/30127730/44948601-a234ef80-adee-11e8-8047-69632be40b12.png)
+ ### 1) Compare percent change of multiple coins on the same graph/table. (Comparison_Graph.Rmd)
+![screen shot 2018-10-01 at 1 02 34 am](https://user-images.githubusercontent.com/30127730/46270485-bd8e3a00-c515-11e8-9ee9-17f3659e7371.png)
  ### 2) Predict the date when the current downtrend or uptrend for Bitcoin will end to buy and sell at the right time. (Predictions.Rmd)
  ![screen shot 2018-09-01 at 2 58 23 pm](https://user-images.githubusercontent.com/30127730/44949062-b7fae280-adf7-11e8-9841-51bc1ccab678.png)
  
  ![screen shot 2018-09-01 at 1 11 55 pm](https://user-images.githubusercontent.com/30127730/44948277-d73e4380-ade8-11e8-9699-71269a56438a.png)
- ### 3) See overall nonlinear regression trendlines for Bitcoin. (Bitcoin_Trend.Rmd)
-![screen shot 2018-09-01 at 1 09 57 pm](https://user-images.githubusercontent.com/30127730/44948606-aa8d2a80-adee-11e8-8efe-996af2fddc25.png)
