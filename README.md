@@ -6,7 +6,12 @@
 
 # Current things this analysis can do:
  ### 1) Compare percent change of multiple coins on the same graph/table. (Comparison_Graph.Rmd)
+ 
 ![screen shot 2018-10-01 at 1 02 34 am](https://user-images.githubusercontent.com/30127730/46270485-bd8e3a00-c515-11e8-9ee9-17f3659e7371.png)
+
+comparison_graph(comparison_date="2017-11-01", end_date="2018-05-05",coins = 1:5, line_type="smooth")
+
+
  ### 2) Predict the date when the current downtrend or uptrend for Bitcoin will end to buy and sell at the right time. (Predictions.Rmd)
  ![screen shot 2018-09-01 at 2 58 23 pm](https://user-images.githubusercontent.com/30127730/44949062-b7fae280-adf7-11e8-9841-51bc1ccab678.png)
  
