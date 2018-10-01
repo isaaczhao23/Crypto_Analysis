@@ -1,0 +1,35 @@
+
+## Creates comparison graph of price changes in USD by selected coin names or current marketcap rank ##
+
+comparison_date = "YYYY-MM-DD"  |   The specific reference date that you want coin prices to be compared to. 
+    
+end_date = "YYYY-MM-DD"  |  The furthest date in the time interval you want to compare up to. (Default is today's date)
+
+coins = c("Bitcoin", "Ethereum")   |   Graphs only Bitcoin and Ethereum
+coins = 1:5                        |   Graphs only top 5 market cap coins
+
+unit = "USD"  |  Percent change of prices in USD. (Default)
+unit = "BTC"  |  Percent change of prices in BTC
+
+line_type = NULL           |  Graphs exact values. (Default)
+line_type = "smooth"       |  Graphs smoothed trendlines instead of exact values.
+line_type = "very smooth"  |  Graphs overall trendlines instead of exact values.
+```{r}
+# Load essentials
+setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
+source("custom_functions.R")
+today = Sys.Date()-1
+
+# show top 50 coins and earliest date record available
+load("info.R")
+sjPlot::tab_df(info) 
+
+#example 1
+comparison_graph(comparison_date="2018-01-01", coins = c("Bitcoin","Litecoin","XRP"))
+
+# example 2
+comparison_graph(comparison_date="2017-10-05", end_date = "2018-05-01",coins = 2:6 , line_type="smooth")
+
+```
+
+

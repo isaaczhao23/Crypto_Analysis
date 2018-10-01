@@ -1,5 +1,12 @@
-source("check_packages.R")
-check_packages(c("ggpubr","RColorBrewer","MASS","plyr","RcmdrMisc", "tidyverse", "tidyr","scales", "crypto", "directlabels", "shiny","ggpubr", "ggrepel","readxl","gridExtra","sjPlot","lubridate","dplyr","ggplot2"))
+check_packages = function(names){
+    for(name in names){
+        if (!(name %in% installed.packages()))
+            install.packages(name, repos="http://cran.us.r-project.org",quiet=TRUE,dependencies=TRUE) #if package not installed, install the package
+        library(name, character.only=TRUE,warn.conflicts=FALSE,quietly=TRUE)
+    }
+}
+
+check_packages(c("ggpubr","ggthemes","RColorBrewer","MASS","plyr","RcmdrMisc", "xts","tidyverse", "tidyr","scales", "crypto", "directlabels", "shiny","ggpubr", "ggrepel","readxl","gridExtra","sjPlot","lubridate","dplyr","ggplot2"))
 select <- dplyr::select
 rename <- dplyr::rename
 mutate <- dplyr::mutate
@@ -65,9 +72,9 @@ generate_coin.list <- function(comparison_date, end_date, topranks = 30){
     end_date1 = convert_date_df$date2
     
     if (comparison_date < end_date){
-            coin.list = getCoins(limit= topranks, start_date = comparison_date1, end_date = end_date1)  %>%  dplyr::select(name,date,close) %>% dplyr::rename(price = close)
+            coin.list = crypto_history(limit= topranks, start_date = comparison_date1, end_date = end_date1)  %>%  dplyr::select(name,date,close) %>% dplyr::rename(price = close)
     } else {
-            coin.list = getCoins(limit= topranks, start_date = end_date1, end_date = comparison_date1) %>%   dplyr::select(name,date,close) %>% dplyr::rename(price = close)
+            coin.list = crypto_history(limit= topranks, start_date = end_date1, end_date = comparison_date1) %>%   dplyr::select(name,date,close) %>% dplyr::rename(price = close)
     }
 }
 
@@ -214,41 +221,76 @@ sjPlot::tab_df(output, title, alternate.rows=TRUE)
 ###############################################################################################
 
 
-comparison_graph = function(comparison_date = "2018-02-06", end_date = Sys.Date()-1, filter_name=NULL, filter_rank = NULL) {
+comparison_graph = function(comparison_date, end_date = Sys.Date()-1, coins=1:5, unit="USD",line_type=NULL) {
+    load("all_coins.R")
+	
+	if (is.character(coins)){
+		all_coins_new = crypto_history(coin = coins, limit = NULL, start_date = "20180930") %>% 
+			select(name,date,close) %>% rename(price=close)
+	}else if (is.numeric(coins)){
+		all_coins_new = crypto_history(limit = max(coins), start_date = "20180930") %>% 
+			select(name,date,close) %>% rename(price=close)
+	} else {stop("INVALID COINS INPUT FORMAT")}
+	
+	all_coins = all_coins %>% bind_rows(all_coins_new)
+	
+	
+	if (unit=="USD"){
+ 		if (is.character(coins)) {
+			data1 = all_coins %>% filter(name %in% coins) %>% filter(date >= comparison_date & date <= end_date )
+			min = data1 %>% group_by(name) %>% slice(1) %>% rename(start_price = price)
+			data2 = data1 %>% full_join(min,by=c("name")) %>% rename(date = date.x) %>% select(-date.y) %>% 
+				mutate(percentage = (price-start_price)/start_price)
+		
+    	}else if (is.numeric(coins)){
+    		ranks = crypto_list(coin = unique(all_coins$name), start_date = Sys.Date()-1, Sys.Date()-1) %>% select(name,rank)
+    		data1 = all_coins %>% filter(name %in% ranks$name[coins]) %>% filter(date >= comparison_date & date <= end_date )
+			min = data1 %>% group_by(name) %>% slice(1) %>% rename(start_price = price)
+			data2 = data1 %>% full_join(min,by=c("name")) %>% rename(date = date.x) %>% select(-date.y) %>% 
+				mutate(percentage = (price-start_price)/start_price)
+    	}
+	}else if (unit=="BTC"){
+    	
+		btc_prices = all_coins %>% filter(name=="Bitcoin") %>% 
+		  filter(date >= comparison_date & date <= end_date ) %>% rename(btc_price = price) %>% select(-name)
+		
+		if (is.character(coins)) {
+			data1 = all_coins %>% filter(name=="Bitcoin") %>% filter(date >= comparison_date & date <= end_date )
+			min = data1 %>% group_by(name) %>% slice(1) %>% rename(start_price = price)
+			data2 = data1 %>% full_join(min,by=c("name")) %>% rename(date = date.x) %>% select(-date.y) %>% 
+				mutate(percentage = (price-start_price)/start_price)
+		
+    	}else if (is.numeric(coins)){
+    		ranks = crypto_list(coin = unique(all_coins$name), start_date = Sys.Date()-1, Sys.Date()-1) %>% select(name,rank)
+    		data1 = all_coins %>% filter(name=="Bitcoin") %>% filter(date >= comparison_date & date <= end_date )
+			min = data1 %>% group_by(name) %>% slice(1) %>% rename(start_price = price)
+			data2 = data1 %>% full_join(min,by=c("name")) %>% rename(date = date.x) %>% select(-date.y) %>% 
+				mutate(percentage = (price-start_price)/start_price)
+    	}
+	}
+		
+
+    plot = ggplot(data2,aes(x=date,y=percentage, color=name)) +
+    	theme_light()+
+    	ggtitle(paste("% Change","in",unit))+
+        scale_y_continuous("", breaks = pretty(data2$percentage, n = 20),labels=percent) + 
+    	scale_x_date("",limits=c(min(data2$date),
+    		max(data2$date + as.numeric((max(data2$date)-min(data2$date)))/20)), 
+    		breaks= pretty(data2$date,n=20), labels=date_format("%B %d, %Y"))+
+    	theme(legend.position="bottom",
+    		axis.ticks.length=unit(0.25,"cm"),
+    		axis.text.x = element_text(angle = 30, hjust = 1,face="bold",size=10),
+    		axis.text.y=element_text(face="bold")) +
+        geom_dl(aes(label = name), method = "last.points", cex = 0.3,alpha=0.7)
     
-    if (comparison_date <= end_date){
-        comparison_date1 = comparison_date
-        end_date1 = end_date
-    } else {
-        comparison_date1 = end_date
-        end_date1 = comparison_date
+    if (is.null(line_type) || (line_type!="smooth" & line_type!="very smooth")){
+    	plot +  geom_line(size=1,alpha=0.5) 
+    }else if (line_type=="smooth"){
+    	plot + geom_point(alpha=0.1) + stat_smooth(geom="line",method="loess",se=FALSE,span=0.2,size=1,alpha=0.5)
     }
-    output = comparison_chart(comparison_date1, end_date1, month_or_day = "day", interval=1, type="nopercent", view_chart=FALSE)
-    
-    c = as.character(as.Date(end_date)+1)
-    
-    output1 = cbind(rank = c(1:nrow(output)), output) %>% 
-        cbind(a= rep(0,nrow(output))) %>% dplyr::rename(!!comparison_date:=a) %>% 
-        cbind(b= rep(NA,nrow(output))) %>% dplyr::rename(!!as.character(as.Date(end_date)+1):=b) %>% 
-        gather(date, change, -name, -rank) %>% mutate(date = as.Date(date)) %>% arrange(date,rank)
-    
-    if (!is.null(filter_name) && is.null(filter_rank)) {
-    plotdf1 = output1 %>% filter(name %in% filter_name)
-    } else if (!is.null(filter_rank) && is.null(filter_name)){
-        plotdf1 = output1 %>% filter(rank %in% filter_rank)
-    } else {
-        plotdf1 = output1 %>% filter(rank %in% c(1:5))
+    else if (line_type=="very smooth"){
+    	plot + stat_smooth(geom="line",method="loess",se=FALSE,span=0.99,size=1,alpha=0.5)
     }
-        
-    
-    
-    ggplot(plotdf1,aes(x=date,y=change, color=name)) +
-        theme_economist()+
-        scale_y_continuous("Percent Change", labels=percent) + 
-    	geom_line() +
-        ggtitle(paste("Percent Change of Cryptocurrency Prices Compared to the Prices of", format(comparison_date, format="%B %d, %Y"))) +
-        #theme(legend.position="none") +
-        geom_dl(aes(label = name), method = "last.points", cex = 1)
 }
 
 ###############################################################################################
@@ -408,7 +450,7 @@ ath.date = as.Date(ath.date)
 atl.date = as.Date(atl.date)
 nath.date=as.Date(nath.date)
 
-btc.df.new = getCoins(coin="Bitcoin",start_date='20180812') %>% dplyr::rename(price = close) %>% dplyr::select(date,price)
+btc.df.new = crypto_history(coin="Bitcoin",start_date='20180812') %>% dplyr::rename(price = close) %>% dplyr::select(date,price)
 btc.df = btc.df %>% filter(date >= as.Date("2017-12-01")) %>% bind_rows(btc.df.new)
 pred.df2 = data.frame(ooath.date,ooatl.date,oath.date,oatl.date,ath.date,atl.date,nath.date)
 a1 = btc.df %>% dplyr::rename(ooath.date = date) %>% dplyr::rename(ooath = price)
@@ -513,51 +555,6 @@ ci[8,] = exp(predict(u.fit8, pred.df, se.fit=T, type='response',interval = "conf
         theme(axis.text.x = element_text(angle = 60, hjust = 1,size=12.5,face="bold"))
 }
 
-
-###############################################################################################
-###############################################################################################
-cols = brewer.pal(11, "RdBu")   # goes from red to white to blue
-pal = colorRampPalette(cols)
-cor_colors = data.frame(correlation = seq(-1,1,0.01), correlation_color = pal(201)[1:201])  # assigns a color for each r correlation value
-cor_colors$correlation_color = as.character(cor_colors$correlation_color)
-
-panel.cor <- function(x, y, digits=2, cex.cor)
-{
-  par(usr = c(0, 1, 0, 1))
-  u <- par('usr') 
-  names(u) <- c("xleft", "xright", "ybottom", "ytop")
-  r <- cor(x, y,method="spearman",use="complete.obs")
-  test <- cor.test(x,y)
-  bgcolor = cor_colors[2+(-r+1)*100,2]    # converts correlation coefficient into a specific color
-  do.call(rect, c(col = bgcolor, as.list(u))) # colors the correlation box
-  
-  if (test$p.value> 0.05){
-    text(0.5,0.5,"Insignificant",cex=1.5)
-  } else{
-  text(0.5, 0.75, paste("r=",round(r,2)),cex=2) # prints correlatoin coefficient
-  text(.5, .25, paste("p=",formatC(test$p.value, format = "e", digits = 1))   ,cex=2)  # prints p value in scientific notation format
-  abline(h = 0.5, lty = 2) # draws a line between correlatoin coefficient and p value
-  }
-  
-}
-panel.smooth<-function (x, y, col = "black", bg = NA, pch = 19, cex = 1.2, col.smooth = "blue", span = 2/3, iter = 3, ...) {
-  points(x, y, pch = pch, col = col, bg = bg, cex = cex)
-  ok <- is.finite(x) & is.finite(y)
-  if (any(ok)) 
-    lines(stats::lowess(x[ok], y[ok], f = span, iter = iter), lwd=2.5, 
-          col = col.smooth, ...)
-}
-panel.hist <- function(x, ...)
-{
-  usr <- par("usr"); on.exit(par(usr))
-  par(usr = c(usr[1:2], 0, 1.5) )
-  h <- hist(x, plot = FALSE)
-  breaks <- h$breaks; nB <- length(breaks)
-  y <- h$counts; y <- y/max(y)
-  rect(breaks[-nB], 0, breaks[-1], y, col="cyan", ...)
-}
-
-#pairs(df[1:16],lower.panel=panel.smooth, upper.panel=panel.cor,diag.panel=panel.hist,cex.labels=2)
 
 
 

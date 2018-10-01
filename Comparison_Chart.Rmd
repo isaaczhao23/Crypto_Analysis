@@ -1,0 +1,35 @@
+
+
+Load essentials.
+```{r}
+setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
+source("custom_functions.R")
+today = Sys.Date()-1
+```
+
+#### How to use comparison_chart function####
+comparison_date:
+    The specific reference date that you want for all other dates to compare to. "YYYY-MM-DD" format. 
+    Use today to refer to today's date.
+    
+end_date:
+    The furthest date in the time interval you want to compare with. "YYYY-MM-DD" format. 
+    [DEFAULT]: today's date.
+
+month_or_day:
+    "day" = [DEFAULT] Looks at all the days between the start date and end date.
+    "month" = Looks at all the months between the start date and end date
+
+interval:
+    Takes a number as the argument. The interval number of months or days the start to end date is divided by. 
+    [DEFAULT] value is 1.
+
+type:
+    "marketcap" = [DEFAULT] sorts dataset by marketcap (descending).
+    "percent" = sorts each column of dataset by the coin with the highest gain since that month.
+    "name" = sorts dataset by coin name.
+    "nopercent" = sorts dataset by marketcap (descending) without percent or name labels.
+
+```{r}
+comparison_chart(comparison_date="2017-01-01", month_or_day="month", interval=1, type="percent", topranks=50)
+```
