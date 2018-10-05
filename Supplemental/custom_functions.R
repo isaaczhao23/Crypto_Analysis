@@ -11,6 +11,7 @@ select <- dplyr::select
 rename <- dplyr::rename
 mutate <- dplyr::mutate
 summarize <- dplyr::summarize
+arrange <- dplyr::arrange
 
 ###############################################################################################
 ###############################################################################################
@@ -224,6 +225,7 @@ sjPlot::tab_df(output, title, alternate.rows=TRUE)
 comparison_graph = function(comparison_date, end_date = Sys.Date()-1, coins=1:5, unit="USD",line_type=NULL) {
     load("all_coins.R")
 	
+	if (comparison_date > as.Date("2018-10-01") || end_date > as.Date("2018-10-01")){
 	if (is.character(coins)){
 		all_coins_new = crypto_history(coin = coins, limit = NULL, start_date = "20180930") %>% 
 			select(name,date,close) %>% rename(price=close)
@@ -233,7 +235,7 @@ comparison_graph = function(comparison_date, end_date = Sys.Date()-1, coins=1:5,
 	} else {stop("INVALID COINS INPUT FORMAT")}
 	
 	all_coins = all_coins %>% bind_rows(all_coins_new)
-	
+	}
 	
 	if (unit=="USD"){
  		if (is.character(coins)) {
