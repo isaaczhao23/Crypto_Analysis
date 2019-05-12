@@ -9,8 +9,10 @@
  comparison_graph(comparison_date="2018-01-01", coins = c("Bitcoin","Litecoin","XRP"))
 ![screen shot 2018-10-01 at 1 25 13 am](https://user-images.githubusercontent.com/30127730/46271105-fa0f6500-c518-11e8-873f-0f943b5f8738.png)
 
-### 2) Informative Trend Graphs
+### 2) Misc. Informative Trend Graphs
 ![Screen Shot 2019-05-12 at 4 27 19 PM](https://user-images.githubusercontent.com/30127730/57587447-e24a8700-74d2-11e9-8c30-eeb931468a70.png)
+![Screen Shot 2019-05-12 at 4 37 39 PM](https://user-images.githubusercontent.com/30127730/57587579-23439b00-74d5-11e9-961e-91f24804418a.png)
+![Screen Shot 2019-05-12 at 4 35 11 PM](https://user-images.githubusercontent.com/30127730/57587581-263e8b80-74d5-11e9-94f9-aa89b1b6e1a0.png)
 
  ### 2) Predict the date when the current downtrend or uptrend for Bitcoin will end to buy and sell at the right time. Still work in progress. (Predictions.Rmd)
  ![screen shot 2018-09-01 at 2 58 23 pm](https://user-images.githubusercontent.com/30127730/44949062-b7fae280-adf7-11e8-9841-51bc1ccab678.png)
