@@ -5,7 +5,7 @@ setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
 source("custom_functions.R")
 
 # Creates dates for uptrend/downtrend
-df<-read_excel("btc_correction_dates.xlsx") %>% mutate(ath.date = as.Date(ath.date)) %>% mutate(atl.date = as.Date(atl.date))
+df<-read_excel("btc_correction_dates2.xlsx") %>% mutate(ath.date = as.Date(ath.date)) %>% mutate(atl.date = as.Date(atl.date))
 n=nrow(df)
 df$ooath.date = as.Date(c(NA,NA, df$ath.date[-c(n,n-1)]), origin="1970-01-01")
 df$ooatl.date = as.Date(c(NA,NA, df$atl.date[-c(n,n-1)]),origin="1970-01-01")
@@ -16,7 +16,7 @@ df$natl.date = c(df$atl.date[-1],NA)
 
 # btc.df has the price for every date
 bitcoin_history_early = read_excel("btc_early_history.xlsx") %>% dplyr::rename(price = close) %>% dplyr::select(date,price) %>% mutate(date = as.Date(date))
-bitcoin_history = getCoins("Bitcoin")
+bitcoin_history = crypto_history("Bitcoin")
 btc.df1 = bitcoin_history %>% dplyr::rename(price = close) %>% dplyr::select(date,price) 
 btc.df = rbind(bitcoin_history_early,btc.df1)
 
@@ -66,20 +66,6 @@ df$days.ooatl.oatl = as.numeric(df$oatl.date - df$ooatl.date)
 df$days.oatl.atl = as.numeric(df$atl.date - df$oatl.date)
 df$days.atl.natl = as.numeric(df$natl.date - df$atl.date)
 
-# Create percent per day
-df$pct.day.ooath.ooatl = df$pct.ooath.ooatl/df$days.ooath.ooatl
-df$pct.day.ooatl.oath = df$pct.ooatl.oath/df$days.ooatl.oath
-df$pct.day.oath.oatl = df$pct.oath.oatl/df$days.oath.oatl
-df$pct.day.oatl.ath = df$pct.oatl.ath/df$days.oatl.ath
-df$pct.day.ath.atl = df$pct.ath.atl/df$days.ath.atl
-df$pct.day.atl.nath = df$pct.atl.nath/df$days.atl.nath
-df$pct.day.ooath.oath = df$pct.ooath.oath/df$days.ooath.oath
-df$pct.day.oath.ath = df$pct.oath.ath/df$days.oath.ath
-df$pct.day.ath.nath = df$pct.ath.nath/df$days.ath.nath
-df$pct.day.ooatl.oatl = df$pct.ooatl.oatl/df$days.ooatl.oatl
-df$pct.day.oatl.atl = df$pct.oatl.atl/df$days.oatl.atl
-df$pct.day.atl.natl = df$pct.atl.natl/df$days.atl.natl
-
 # Create regression
 df$reg.ooath.ooatl = abs(regression(start.date = df$ooath.date,end.date = df$ooatl.date,btc.df))
 df$reg.ooatl.oath = abs(regression(start.date = df$ooatl.date,end.date = df$oath.date,btc.df))
@@ -115,8 +101,8 @@ df$atl.bull = as.factor(df$atl.bull)
 log.df = log(abs(df[,17:((ncol(df))-3)]))
 names(log.df) <- paste0("log.",names(log.df))
 df = cbind(df,log.df)
+df$order = seq(1,nrow(df))
 
-
-save(df,file="bitcoin_downtrend_history.RDA")
+save(df,file="bitcoin_downtrend_history2.RDA")
 ```
 

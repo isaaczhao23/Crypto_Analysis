@@ -1,0 +1,53 @@
+
+
+```{r}
+setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
+source("custom_functions.R")
+
+# Creates dates for uptrend/downtrend
+df<-read_excel("all_slopes.xlsx") %>% mutate(start = as.Date(start), end=as.Date(end))
+
+
+# btc.df has the price for every date
+bitcoin_history_early = read_excel("btc_early_history.xlsx") %>% dplyr::rename(price = close) %>% dplyr::select(date,price) %>% mutate(date = as.Date(date))
+bitcoin_history = crypto_history("Bitcoin")
+btc.df1 = bitcoin_history %>% dplyr::rename(price = close) %>% dplyr::select(date,price) 
+btc.df = rbind(bitcoin_history_early,btc.df1)
+
+# Create duration of days
+df$days = as.numeric(df$end - df$start)
+df$slope = regression(start.date = df$start, end.date = df$end,btc.df)
+df$bear = as.factor(ifelse(
+		df$start>as.Date("2013-11-30") & df$start < as.Date("2015-1-17")|
+		df$start>as.Date("2017-12-17") & df$start < as.Date("2018-12-08")
+	,1,0))
+
+# Create duration of days'
+current = data.frame(start = as.Date("2018-12-24"), end=Sys.Date())
+current$days = as.numeric(current$end - current$start)
+current$slope = regression(start.date = current$start, end.date = current$end,btc.df)
+current$bear = as.factor(ifelse(
+		current$start>as.Date("2013-11-30") & current$start < as.Date("2015-1-17")|
+		current$start>as.Date("2017-12-17") & current$start < as.Date("2018-12-08")
+	,1,0))
+
+
+
+
+df.down = df %>% mutate(slope = abs(slope)) %>% filter(between(slope,0.4,5), days < 75)
+
+summary(lm(log(days) ~ slope , df.down))
+
+ggplot(df.down %>% mutate(slope = abs(slope)), aes(slope,days))+
+	geom_point(size=5,color="blue",alpha=0.7)+
+	geom_point(data=current %>% mutate(slope = abs(slope)),color="cyan",size=7)+
+	stat_smooth(method="loess",span=0.7,color="red",alpha=0.2,fill="salmon1") +
+	stat_smooth(method="lm",color="green",alpha=0.2,fill="lightgreen")+
+	scale_x_log10("Downtrend Slope (Absolute Value)",breaks=c(.25,.5,.75,1,1.5,2,2.5,3,4,5))+
+	scale_y_log10("Number of Days Downtrend Lasted",breaks=seq(0,200,5)) +
+	geom_vline(data=current %>% mutate(slope = abs(slope)), aes(xintercept=slope), size=8,alpha=0.2,color="cyan")+
+	theme_bw()
+	
+
+```
+

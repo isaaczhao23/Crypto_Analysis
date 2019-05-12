@@ -11,10 +11,8 @@ coins = 1:5                        |   Graphs only top 5 market cap coins
 unit = "USD"  |  Percent change of prices in USD. (Default)
 unit = "BTC"  |  Percent change of prices in BTC
 
-line_type = NULL           |  Graphs exact values. (Default)
-line_type = "smooth"       |  Graphs smoothed trendlines instead of exact values.
-line_type = "very smooth"  |  Graphs overall trendlines instead of exact values.
 ```{r}
+# 
 # Load essentials
 setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
 source("custom_functions.R")
@@ -25,10 +23,7 @@ load("info.R")
 sjPlot::tab_df(info) 
 
 #example 1
-comparison_graph(comparison_date="2018-01-01", coins = c("Bitcoin","Litecoin","XRP"))
-
-# example 2
-comparison_graph(comparison_date="2017-10-05", end_date = "2018-05-01",coins = 2:6 , line_type="smooth")
+comparison_graph(comparison_date="2018-12-18", end_date = today,coins = c("Bitcoin","Litecoin","Ethereum","XRP","Stellar"))
 
 ```
 

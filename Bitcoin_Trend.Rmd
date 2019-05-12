@@ -1,0 +1,87 @@
+
+```{r}
+setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
+source("custom_functions.R")
+load("bitcoin_history_all.RDA")
+btc.df.new = crypto_history(coin="Bitcoin",start_date='20180812') %>% dplyr::rename(price = close) %>% dplyr::select(date,price)
+btc.df = btc.df  %>% bind_rows(btc.df.new)
+library(cowplot)
+```
+
+
+```{r}
+btc.df1 = btc.df %>% filter(date >= as.Date("2011-06-08") & date <= as.Date("2013-02-22")) %>%
+	mutate(time = "June 08, 2011 - Feb 22, 2013")
+btc.df2 = btc.df %>% filter(date >= as.Date("2013-11-30") & date <= as.Date("2017-01-06")) %>%
+	mutate(time = "Nov 30, 2013 - Jan 06, 2017")
+btc.df3 = btc.df %>% filter(date >= as.Date("2017-12-16")) %>%
+	mutate(time = "Dec 16, 2017 - Now")
+
+
+all = bind_rows(btc.df1,btc.df2,btc.df3) %>% group_by(time) %>% mutate(change = (price - max(price))/max(price),
+	x = seq(1:n()))
+all$time = factor(all$time, levels=rev(unique(all$time)))
+
+mins = all %>% group_by(time) %>% summarize(change = min(change))
+
+ggplot(all, aes(x=x,y=change,color=time)) + 
+	geom_line()+
+	theme_bw() +
+	#geom_smooth(method="loess",se=FALSE,span=0.95,size=1.5,alpha=0.3)+
+	xlab("")+
+    theme(legend.position="bottom")+
+	geom_hline(data=mins,aes(yintercept=change,color=time))+
+	scale_x_continuous("Days since ATH",breaks=seq(0,2000,50))+
+	scale_color_manual("", values = c("red","green","blue"))+
+	scale_y_continuous("% Change from ATH",labels=scales::percent_format(accuracy=1), breaks=seq(-1,0,0.1))
+
+```
+
+
+```{r}
+#library(plotly)
+#btc.df$days = seq(1:nrow(btc.df))
+
+btc.df2 = btc.df %>% filter(!(date >= as.Date("2011-02-22") & date <= as.Date("2011-8-22"))) %>%
+	filter(!(date >= as.Date("2013-01-28") & date <= as.Date("2015-01-04"))) %>%
+	filter(!(date >= as.Date("2017-05-07") & date <= as.Date("2018-11-26")))
+btc.df2$date[nrow(btc.df2)] = as.Date("2019-05-01")
+btc.df2$price[nrow(btc.df2)] = 7000
+
+
+ggplot(btc.df, aes(date,price))+
+	geom_line(color="blue")+
+	scale_y_log10("BTC/USD",breaks=c(0.5,1,50,100,500,1000,5000,10000),labels=c("$0.5","$1","$50","$100","$500","$1,000","$5,000","$10,000"))+
+	background_grid(major = "xy", minor = "none")+
+	stat_smooth(data = btc.df2, method="loess",span=0.99,color="lightblue")+
+	scale_x_date(breaks=pretty(btc.df$date,n=10), labels=date_format("%Y"))+
+	#geom_vline(xintercept = c(as.numeric(as.Date("2021-01-01")),as.numeric(as.Date("2022-01-01"))), color="grey90")
+	xlab("")
+
+#ggplotly(a,tooltip = c("date","price"))
+
+```
+
+
+compare to gold
+```{r}
+#plot gold
+library(readr)
+
+gold = read_csv("~/Desktop/Crypto_Analysis-master/Supplemental/gold.history.csv") %>% as.data.frame()
+gold2 = gold %>% filter(date <= as.Date("2005-05-01") & date >= as.Date("1974-01-01")) %>% mutate(item="Gold")
+btc2 = btc.df %>% filter(date >= as.Date("2017-08-01")) %>% mutate(item="BTC")
+btc.gold = bind_rows(gold2,btc2)
+ggplot(btc.gold, aes(date,price))+
+	geom_line()+
+	theme_bw()+
+	scale_x_date(breaks=c(as.Date("1980-01-01"),as.Date("1990-01-01"),as.Date("2000-01-01"),as.Date("2018-01-01"),as.Date("2019-01-01")),labels=date_format("%Y"))+
+	facet_wrap(~item,scales="free")+
+	scale_y_continuous("USD",breaks=c(200,400,600,800,5000,10000,15000,20000),
+		labels=c("$200 (1x)","$400 (2x)","$600 (3x)","$800 (4x)","$5,000 (1x)","$10,000 (2x)","$15,000 (3x)","$20,000 (4x)"))
+
+
+
+#ggplotly(a,tooltip = c("date","price"))
+```
+

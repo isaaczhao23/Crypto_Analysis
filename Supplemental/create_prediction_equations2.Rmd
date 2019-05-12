@@ -3,8 +3,7 @@ Loads essentials. Run create_btc_prediction_data.Rmd to update bitcoin_history.R
 ```{r}
 setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
 source("custom_functions.R")
-load("bitcoin_downtrend_history.RDA")  # named df
-df$order = seq(1,nrow(df))
+load("bitcoin_downtrend_history2.RDA")  # named df
 ```
 
 Predict when downtrend will end
@@ -16,18 +15,50 @@ fit.all = lm(log.days.ath.atl ~  log.pct.ooath.ooatl   +  log.pct.ooatl.oath    
 + log.days.ooatl.oath +    log.days.oath.oatl  +    log.days.oatl.ath   +    log.days.ooath.oath    
 +log.days.oath.ath     +  log.days.ooatl.oatl     +log.reg.ooath.ooatl    + log.reg.ooatl.oath     + log.reg.oath.oatl      
 +log.reg.oatl.ath       + log.reg.ooath.oath     + log.reg.oath.ath       + log.reg.ooatl.oatl     
-+bad.months             + log.reg.ath.atl + ath.bull + order,df   )
++bad.months             + log.reg.ath.atl + ath.bull + order ,df   )
 
-library(kernlab)
+step_fit <- stepAIC(d.fit1, direction="both")
+step_fit$anova
 
-train = sample(3:48,42,replace=FALSE)
+# library(glmnet)
+# x = df %>% select(log.pct.ooath.ooatl,log.pct.ooatl.oath ,log.pct.oath.oatl ,log.pct.oatl.ath , 
+# log.pct.ooath.oath  ,    log.pct.oath.ath    , log.pct.ooatl.oatl  ,  log.days.ooath.ooatl   ,
+# log.days.ooatl.oath ,  log.days.oath.oatl  ,  log.days.oatl.ath   ,   log.days.ooath.oath,    
+# log.days.oath.ath   , log.days.ooatl.oatl  ,log.reg.ooath.ooatl  , log.reg.ooatl.oath   ,log.reg.oath.oatl,      
+# log.reg.oatl.ath   , log.reg.ooath.oath   , log.reg.oath.ath   , log.reg.ooatl.oatl,     
+# bad.months  ,log.reg.ath.atl , ath.bull , order) %>% as.matrix()
+# y = df %>% select(log.days.ath.atl) %>% as.matrix()
+# fit = glmnet(x, y, alpha = 0.2, nlambda = 20)
 
-# gp = gausspr(days.ath.atl ~  log.pct.ooath.ooatl   +  log.pct.ooatl.oath    +  log.pct.oath.oatl    +   log.pct.oatl.ath  
-# +log.pct.ooath.oath  +    log.pct.oath.ath    +    log.pct.ooatl.oatl  +    log.days.ooath.ooatl   
-# + log.days.ooatl.oath +    log.days.oath.oatl  +    log.days.oatl.ath   +    log.days.ooath.oath    
-# +log.days.oath.ath     +  log.days.ooatl.oatl     +log.reg.ooath.ooatl    + log.reg.ooatl.oath     + log.reg.oath.oatl      
-# +log.reg.oatl.ath       + log.reg.ooath.oath     + log.reg.oath.ath       + log.reg.ooatl.oatl     
-# +bad.months             + log.reg.ath.atl + ath.bull, data=df[train,],var=0.1,variance.model=TRUE)
+d.fit1.v2 = lm(log.days.ath.atl ~ log.pct.ooath.ooatl + log.pct.ooatl.oath + 
+    log.pct.oath.oatl + log.pct.oatl.ath + log.pct.ooatl.oatl + 
+    log.days.oath.oatl + log.days.oatl.ath + log.days.ooath.oath + 
+    log.days.ooatl.oatl + log.reg.ooath.ooatl + log.reg.oath.oatl + 
+    log.reg.oatl.ath +  log.reg.oath.ath *
+     log.reg.ath.atl + ath.bull + order,df)
+
+
+summary(d.fit1)
+
+
+library(ipred)
+model=bagging(log.days.ath.atl ~  log.pct.ooath.ooatl   +  log.pct.ooatl.oath    +  log.pct.oath.oatl    +   log.pct.oatl.ath  
++log.pct.ooath.oath  +    log.pct.oath.ath    +    log.pct.ooatl.oatl  +    log.days.ooath.ooatl   
++ log.days.ooatl.oath +    log.days.oath.oatl  +    log.days.oatl.ath   +    log.days.ooath.oath    
++log.days.oath.ath     +  log.days.ooatl.oatl     +log.reg.ooath.ooatl    + log.reg.ooatl.oath     + log.reg.oath.oatl      
++log.reg.oatl.ath       + log.reg.ooath.oath     + log.reg.oath.ath       + log.reg.ooatl.oatl     
++bad.months             + log.reg.ath.atl + ath.bull + order ,df   )
+
+
+model = bagging(log.days.ath.atl ~ log.pct.ooath.ooatl + log.pct.ooatl.oath + 
+    log.pct.oath.oatl + log.pct.oatl.ath + log.pct.ooatl.oatl + 
+    log.days.oath.oatl + log.days.oatl.ath + log.days.ooath.oath + 
+    log.days.ooatl.oatl + log.reg.ooath.ooatl + log.reg.oath.oatl + 
+    log.reg.oatl.ath +  log.reg.oath.ath *
+     log.reg.ath.atl + ath.bull + order,df)
+predict = predict(model,df)
+mse = mean((y - predict)^2,na.rm=TRUE)
+
 
 
 observed = df$log.days.ath.atl[c(-1,-2,-train)]
@@ -46,104 +77,6 @@ ggplot(df.predicted.diff.lmer, aes(x = fit, y = diff)) +
 	scale_y_continuous(name="Difference in Days Between Prediction and Actual Downtrend Duration (Prediction - Actual)",breaks=seq(-100,100,5))+
     theme_economist() + scale_colour_economist() +
 	ggtitle("Error of Mixed Model Predicting BTC Downtrend Duration") 
-
-# for no reg.ath.atl, logs
-#pairs(log.df2[c(1:10,33)],lower.panel=panel.smooth, upper.panel=panel.cor,diag.panel=panel.hist,cex.labels=1)
-#pairs(log.df2[which(colnames(log.df2) %in% c("log.pct.oath.oatl", "log.pct.oatl.ath", "log.pct.oath.ath", "log.days.ooatl.oath", "log.pct.day.oath.ath", "ath.bull","atl.bull", "log.reg.ath.atl","log.days.ath.atl"))    ],lower.panel=panel.smooth, upper.panel=panel.cor,diag.panel=panel.hist,cex.labels=1) 
-  
-# with no log.reg.ath.atl
-#d.fit1 = lm(log.days.ath.atl ~ log.pct.oath.oatl + log.pct.oath.ath , df)
-d.fit1 = lm(log.days.ath.atl ~ log.pct.oatl.ath + log.pct.oath.ath + log.days.ooath.ooatl + 
-    log.days.ooatl.oath + log.days.oath.oatl + log.days.oatl.ath + 
-    log.days.ooath.oath + log.days.oath.ath + log.reg.oath.oatl + 
-    bad.months,df)
-d.fit2 = lm(log.days.ath.atl ~ log.pct.oatl.ath + log.days.ooath.ooatl + 
-    log.days.ooatl.oath + log.days.oath.oatl + log.days.ooath.oath + 
-    log.reg.oath.oatl + log.reg.oath.ath + bad.months,df)
-
-# with log.reg.ath.atl
-
-d.fit3 = lm(log.days.ath.atl ~ log.pct.ooath.oath + log.pct.oath.ath + 
-     log.reg.ooatl.oath + 
-    ath.bull + log.reg.ath.atl + log.pct.ooatl.oatl,df)
-
-
-d.fit4 = lm(log.days.ath.atl ~ log.pct.ooatl.oath + log.pct.oatl.ath + log.pct.ooath.oath + 
-    log.pct.oath.ath + log.pct.ooatl.oatl + log.days.ooatl.oath + 
-    log.days.oath.oatl + log.days.oatl.ath + log.days.oath.ath + 
-    log.reg.ooatl.oath + log.reg.oatl.ath + ath.bull + log.reg.ath.atl,df)
-
-d.fit5 = lm(log.days.ath.atl ~ log.pct.oatl.ath + log.pct.ooath.oath + 
-    log.pct.oath.ath + log.pct.ooatl.oatl +
-    log.days.oath.oatl + log.days.oatl.ath + log.days.oath.ath + 
-    log.reg.ooatl.oath + log.reg.oatl.ath + ath.bull + log.reg.ath.atl + I(log.reg.ath.atl^2) + I(log.reg.ath.atl^3) ,df)
-
-
-d.fit6 = lm(log.days.ath.atl ~ log.pct.oatl.ath +  log.pct.ooath.oath  +
-    log.days.oatl.ath +log.pct.oath.ath  + log.pct.ooatl.oatl +
-    log.reg.ooatl.oath + log.reg.oatl.ath +I(log.reg.oatl.ath^2) + ath.bull + log.reg.ath.atl + I(log.reg.ath.atl^2) + log.reg.ath.atl*ath.bull,df)
-
-
-d.fit7 = lm(log.days.ath.atl ~ log.pct.oatl.ath +  log.pct.ooath.oath  +
-   log.pct.oath.ath  + log.pct.ooatl.oatl +
-    log.reg.ooatl.oath + log.reg.oatl.ath+I(log.reg.oatl.ath^2)  + ath.bull + log.reg.ath.atl + I(log.reg.ath.atl^2),df)
-
-
-d.fit8 = lm(log.days.ath.atl ~ log.pct.oatl.ath + log.pct.ooath.oath + 
-    ath.bull + log.reg.ath.atl + I(log.pct.oatl.ath^3) + 
-    I(log.pct.ooath.oath^3) + I(log.pct.oath.ath^3) + I(log.pct.ooatl.oatl^3) + 
-    I(log.days.oath.oatl^3) + I(log.reg.ooatl.oath^3) + 
-    I(log.reg.oatl.ath^3) + I(log.reg.ath.atl^3),df)
-
-d.fit9 = lm(log.days.ath.atl ~ log.pct.ooatl.oath + log.pct.oatl.ath + log.pct.ooath.oath + 
-    log.pct.oath.ath + log.pct.ooatl.oatl + log.days.ooatl.oath + 
-    log.days.oath.oatl + log.days.oatl.ath + log.days.oath.ath + 
-    log.reg.ooatl.oath + log.reg.oatl.ath + log.reg.ath.atl + 
-    ath.bull + order,df)
-
-d.fit1.lmer = lmer(log.days.ath.atl ~ log.pct.oatl.ath + log.pct.oath.ath + log.days.ooath.ooatl + 
-    log.days.ooatl.oath + log.days.oath.oatl + log.days.oatl.ath + 
-    log.days.ooath.oath + log.days.oath.ath + log.reg.oath.oatl + 
-    bad.months + (1|ath.bull),df)
-d.fit2.lmer = lmer(log.days.ath.atl ~ log.pct.oatl.ath + log.days.ooath.ooatl + 
-    log.days.ooatl.oath + log.days.oath.oatl + log.days.ooath.oath + 
-    log.reg.oath.oatl + log.reg.oath.ath + bad.months + (1|ath.bull),df)
-
-# with log.reg.ath.atl
-
-d.fit3.lmer = lmer(log.days.ath.atl ~ log.pct.ooath.oath + log.pct.oath.ath + 
-     log.reg.ooatl.oath + 
-    log.reg.ath.atl + log.pct.ooatl.oatl + (1|ath.bull),df)
-
-
-d.fit4.lmer = lmer(log.days.ath.atl ~ log.pct.ooatl.oath + log.pct.oatl.ath + log.pct.ooath.oath + 
-    log.pct.oath.ath + log.pct.ooatl.oatl + log.days.ooatl.oath + 
-    log.days.oath.oatl + log.days.oatl.ath + log.days.oath.ath + 
-    log.reg.ooatl.oath + log.reg.oatl.ath + log.reg.ath.atl + (1|ath.bull),df)
-
-d.fit5.lmer = lmer(log.days.ath.atl ~ log.pct.oatl.ath + log.pct.ooath.oath + 
-    log.pct.oath.ath + log.pct.ooatl.oatl +
-    log.days.oath.oatl + log.days.oatl.ath + log.days.oath.ath + 
-    log.reg.ooatl.oath + log.reg.oatl.ath + log.reg.ath.atl + I(log.reg.ath.atl^2) + I(log.reg.ath.atl^3) + (1|ath.bull),df)
-
-
-d.fit6.lmer = lmer(log.days.ath.atl ~ log.pct.oatl.ath +  log.pct.ooath.oath  +
-    log.days.oatl.ath +log.pct.oath.ath  + log.pct.ooatl.oatl +
-    log.reg.ooatl.oath + log.reg.oatl.ath +I(log.reg.oatl.ath^2) +  log.reg.ath.atl + I(log.reg.ath.atl^2) + log.reg.ath.atl*ath.bull
-	+ (1|ath.bull),df)
-
-d.fit7.lmer = lmer(log.days.ath.atl ~ log.pct.oatl.ath +  log.pct.ooath.oath  +
-   log.pct.oath.ath  + log.pct.ooatl.oatl +
-    log.reg.ooatl.oath + log.reg.oatl.ath + I(log.reg.oatl.ath^2)  +  log.reg.ath.atl + I(log.reg.ath.atl^2) + 
-		(1|ath.bull),df)
-
-
-d.fit8.lmer = lmer(log.days.ath.atl ~ log.pct.oatl.ath + log.pct.ooath.oath + 
-     log.reg.ath.atl + I(log.pct.oatl.ath^3) + 
-    I(log.pct.ooath.oath^3) + I(log.pct.oath.ath^3) + I(log.pct.ooatl.oatl^3) + 
-    I(log.days.oath.oatl^3) + I(log.reg.ooatl.oath^3) + 
-    I(log.reg.oatl.ath^3) + I(log.reg.ath.atl^3) + (1|ath.bull),df)
-
 
 step_fit <- stepAIC(fit.all, direction="both")
 step_fit$anova
@@ -211,23 +144,8 @@ ggplot(df.predicted.diff, aes(x = fit, y = abs_diff)) +
 	ggtitle("Error of Linear Model Predicting BTC Downtrend Duration")
 
 
-save(d.fit1,file="models/d.fit1.Rda")
-save(d.fit2,file="models/d.fit2.Rda")
-save(d.fit3,file="models/d.fit3.Rda")
-save(d.fit4,file="models/d.fit4.Rda")
-save(d.fit5,file="models/d.fit5.Rda")
-save(d.fit6,file="models/d.fit6.Rda")
-save(d.fit7,file="models/d.fit7.Rda")
-save(d.fit8,file="models/d.fit8.Rda")
-save(d.fit1.lmer,file="models/d.fit1.lmer.Rda")
-save(d.fit2.lmer,file="models/d.fit2.lmer.Rda")
-save(d.fit3.lmer,file="models/d.fit3.lmer.Rda")
-save(d.fit4.lmer,file="models/d.fit4.lmer.Rda")
-save(d.fit5.lmer,file="models/d.fit5.lmer.Rda")
-save(d.fit6.lmer,file="models/d.fit6.lmer.Rda")
-save(d.fit7.lmer,file="models/d.fit7.lmer.Rda")
-save(d.fit8.lmer,file="models/d.fit8.lmer.Rda")
-save(d.fit9,file="models/d.fit9.Rda")
+
+save(d.fit1.v2,file="models/d.fit1.v2.Rda")
 #save(d.fit10,file="models/d.fit10.Rda")
 #save(d.stats.model,file="models/d.stats.model.Rda")
 ```

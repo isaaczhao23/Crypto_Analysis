@@ -1,0 +1,40 @@
+
+
+
+Loads essentials. Run create_btc_prediction_data.Rmd to update bitcoin_history.RDA data.
+```{r}
+setwd("~/Desktop/Crypto_Analysis-master/Supplemental")
+source("custom_functions.R")
+source("custom_cormatrix.R")
+load("bitcoin_downtrend_history.RDA")  # named df
+```
+
+
+```{r}
+df$order = seq(1,nrow(df))
+
+custom_cormatrix(df[,c(81:91,92)],size=0.3)
+
+"log.pct.oatl.atl" "log.pct.atl.natl"
+
+ggplot(df,aes(order,log.pct.oatl.atl))+
+	geom_point(color="skyblue2",size=3)+
+	#geom_line(color="skyblue4")+
+	#geom_smooth(method="loess",color="lightblue",span=0.6)+
+	geom_smooth(method="lm")+
+	theme_classic()
+
+model = loess(log.days.ath.atl~order,data=df,span=0.2 )
+df.predict = data.frame(order=seq(1,75))
+df.predict$log.days.ath.atl = predict(model,df.predict)
+
+
+ggplot(df,aes(order,log.days.ath.atl))+
+	geom_point(color="skyblue2",size=3)+
+	geom_line(color="skyblue4")+
+	geom_smooth(method="loess",color="lightblue",span=0.4)+
+	geom_smooth(method="lm")+
+	theme_classic()
+
+```
+
