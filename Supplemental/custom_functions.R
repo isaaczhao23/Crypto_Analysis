@@ -7,7 +7,7 @@ check_packages = function(names){
     }
 }
 
-check_packages(c("lme4","merTools","ggpubr","ggthemes","RColorBrewer","MASS","plyr","RcmdrMisc", "xts","tidyverse", "tidyr","scales", "crypto", "directlabels", "shiny","ggpubr", "ggrepel","readxl","gridExtra","sjPlot","lubridate","dplyr","ggplot2"))
+check_packages(c("lme4","merTools","ggthemes","RColorBrewer","MASS","plyr","RcmdrMisc", "xts","tidyverse", "tidyr","scales", "crypto", "directlabels", "shiny","ggpubr", "ggrepel","readxl","gridExtra","sjPlot","lubridate","dplyr","ggplot2"))
 select <- dplyr::select
 rename <- dplyr::rename
 mutate <- dplyr::mutate
@@ -187,9 +187,10 @@ sjPlot::tab_df(output, title, alternate.rows=TRUE)
 ###############################################################################################
 
 
-comparison_graph = function(comparison_date, end_date = Sys.Date()-1, coins=1:5, unit="USD") {
+comparison_graph = function(start_date, end_date = Sys.Date()-1, coins=1:5, unit="USD") {
     load("all_coins.R")
 	
+	comparison_date = as.Date(start_date)
 	if (comparison_date > as.Date("2018-10-01") || end_date > as.Date("2018-10-01")){
 	if (is.character(coins)){
 		all_coins_new = crypto_history(coin = coins, limit = NULL, start_date = "20180930") %>% 
@@ -239,10 +240,9 @@ comparison_graph = function(comparison_date, end_date = Sys.Date()-1, coins=1:5,
 
     ggplot(data2,aes(x=date,y=percentage, color=name)) +
     	theme_bw()+
-    	ggtitle(paste("% Change","in",unit))+
-        scale_y_continuous("", breaks = pretty(data2$percentage, n = 10), labels=scales::percent_format(big.mark = ",")) + 
+        scale_y_continuous(paste0("% Change (",unit,")"), breaks = pretty(data2$percentage, n = 10), labels=scales::percent_format(big.mark = ",")) + 
     	scale_x_date("",limits=c(min(data2$date),
-    		max(data2$date + as.numeric((max(data2$date)-min(data2$date)))/15)), 
+    		max(data2$date + as.numeric((max(data2$date)-min(data2$date)))/12)), 
     		breaks= pretty(data2$date,n=20), labels=date_format("%B %d, %Y"))+
     	theme(legend.position="bottom",
     		legend.title=element_blank(),
@@ -250,7 +250,9 @@ comparison_graph = function(comparison_date, end_date = Sys.Date()-1, coins=1:5,
     		axis.text.x = element_text(angle = 30, hjust = 1,face="bold",size=8),
     		axis.text.y=element_text(face="bold")) +
         #geom_dl(aes(label = name), method = "last.points", cex = 0.3,alpha=0.7)+
- 		geom_line(size=1,alpha=0.5) 
+    	geom_hline(yintercept=0)+
+    	geom_dl(aes(label = name), method='last.bumpup', cex = 1.3, hjust = 1)+
+ 		geom_line(size=1,alpha=0.5)
  
 }
 
