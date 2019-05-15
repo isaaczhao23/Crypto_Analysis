@@ -11,7 +11,9 @@
 
 ### 2) Misc. Informative Trend Graphs
 ![Screen Shot 2019-05-12 at 4 27 19 PM](https://user-images.githubusercontent.com/30127730/57587447-e24a8700-74d2-11e9-8c30-eeb931468a70.png)
-![Screen Shot 2019-05-12 at 4 37 39 PM](https://user-images.githubusercontent.com/30127730/57587579-23439b00-74d5-11e9-961e-91f24804418a.png)
+
+![Screen Shot 2019-05-15 at 12 04 15 AM](https://user-images.githubusercontent.com/30127730/57747933-a6b3e680-76a5-11e9-916f-b612d5c4f593.png)
+
 ![Screen Shot 2019-05-12 at 4 35 11 PM](https://user-images.githubusercontent.com/30127730/57587581-263e8b80-74d5-11e9-94f9-aa89b1b6e1a0.png)
 
  ### 2) Predict the date when the current downtrend or uptrend for Bitcoin will end to buy and sell at the right time. Still work in progress. (Predictions.Rmd)
